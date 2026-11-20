@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="囚徒健身六艺十式个人训练日志：动作要点、升级标准、每日打卡与长期记录，纯静态、零依赖、数据保存在本机。">
+<meta name="description" content="基于《囚徒健身》六艺十式的非官方个人训练日志：60 式动作要点、初级/中级/升级三档标准、每日打卡与长期统计，纯静态、零依赖、数据保存在本机。">
 <meta name="theme-color" content="#0b0b0d">
-<title>囚徒健身 · 六艺十式打卡</title>
+<title>囚徒健身 · 六艺十式打卡（非官方）</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--bg:#0b0b0d;--panel:#121216;--panel2:#17171d;--line:#26262e;--line2:#34343e;--text:#ece9e1;--muted:#a29e93;--dim:#6f6c64;--gold:#e4b83e;--green:#55b07c;--red:#c9604f}
@@ -168,6 +168,15 @@ button,a{-webkit-tap-highlight-color:transparent}
 .data-note.warn{color:#cf8375}
 .data-btns{display:flex;flex-direction:column;gap:8px}
 .foot{font-size:clamp(.6875rem,.6vw,.75rem);color:#5c5851;line-height:1.9;text-align:center;border-top:1px solid var(--line);padding-top:clamp(16px,1.4vw,22px)}
+.legal{margin-top:10px}
+.legal summary{display:inline-flex;align-items:center;gap:5px;cursor:pointer;list-style:none;color:var(--dim);letter-spacing:.08em;border-bottom:1px dashed var(--line2);padding-bottom:1px}
+.legal summary::-webkit-details-marker{display:none}
+.legal summary::after{content:'▾';font-size:.9em}
+.legal[open] summary::after{content:'▴'}
+.legal ul{list-style:none;max-width:780px;margin:10px auto 0;text-align:left;display:flex;flex-direction:column;gap:5px}
+.legal li{position:relative;padding-left:12px;line-height:1.8;color:#6f6b62}
+.legal li::before{content:'·';position:absolute;left:0;color:var(--gold)}
+.legal b{color:var(--muted);font-weight:600;margin-right:6px}
 /* 弹层 */
 .modal{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;padding:clamp(14px,1.4vw,32px);background:rgba(5,5,7,.84);backdrop-filter:blur(6px)}
 .modal.open{display:flex}
@@ -267,7 +276,7 @@ button,a{-webkit-tap-highlight-color:transparent}
       </div>
       <div>
         <h1>囚徒健身 · 六艺十式</h1>
-        <p>CONVICT CONDITIONING · 自重训练日志</p>
+        <p>CONVICT CONDITIONING · 非官方自重训练日志</p>
       </div>
     </div>
     <div class="stats">
@@ -322,7 +331,7 @@ button,a{-webkit-tap-highlight-color:transparent}
     <ul>
       <li><b>循序渐进</b>一次只升一式。达到升级标准、动作不变形，再进入下一式。</li>
       <li><b>慢速控制</b>下降与推起各约 2 秒，底部停顿 1 秒，不靠惯性完成。</li>
-      <li><b>力竭有度</b>普通组留 1 次余力，最后一组才可以全力。状态差就减量。</li>
+      <li><b>力竭有度</b>任何一组都留 1 次余力，绝不力竭。状态差就减量。</li>
       <li><b>记录真实</b>只记录真正完成的次数。打卡不是给别人看的，自欺没有意义。</li>
       <li><b>恢复优先</b>同一部位间隔 48 小时；出现关节刺痛、麻木、眩晕立刻停止。</li>
       <li><b>长期主义</b>每周 2–3 次，坚持几年，远胜一时逞强。</li>
@@ -359,7 +368,17 @@ button,a{-webkit-tap-highlight-color:transparent}
   </div>
 
   <footer class="foot">
-    六艺十式源自《囚徒健身》训练体系 · 本页为个人训练记录工具，动作要点为原创整理，图例照片按每式顺序排列 · 训练前请评估自身状况，量力而行
+    <p>六艺十式训练体系引自《囚徒健身》（Convict Conditioning，Paul Wade 著）· 本页为非官方个人训练记录工具 · 动作要点为原创整理，图例为自拍</p>
+    <details class="legal">
+      <summary>版权与免责声明</summary>
+      <ul>
+        <li><b>非官方声明</b>本站为非官方、非商业性的个人训练记录工具，与原作者 Paul Wade（保罗·威德）及出版方无任何关联，亦未获得其授权或背书。</li>
+        <li><b>出处与版权</b>六艺十式体系、动作名称与三档训练标准引自《囚徒健身：用失传的技艺练就强大的生存实力》（[美] 保罗·威德 著，谷红岩 译，北京科学技术出版社，2013 年 10 月，ISBN 978-7-5304-6755-8）；英文原版 Convict Conditioning（Paul "Coach" Wade，Dragon Door Publications）。相关著作权归原作者与出版方所有。</li>
+        <li><b>内容范围</b>页面内动作要点、常见错误为本站原创整理，未复制原书正文、表格与插图；站内实拍图例由本站作者拍摄，未经许可请勿转载。</li>
+        <li><b>训练风险</b>自重训练存在受伤风险，请根据自身状况量力而行，必要时咨询专业人士；因参照本页内容训练而产生的伤害或损失，本站不承担责任。</li>
+        <li><b>开源许可</b>本页代码以 Apache License 2.0 开源；该许可不适用于书中训练体系、动作名称与训练标准等内容。</li>
+      </ul>
+    </details>
   </footer>
 </div>
 
@@ -419,16 +438,16 @@ const EX = [
   { cat:'pushup', step:3,  name:'跪姿俯卧撑', en:'Kneeling Push-Up', s:['1×10','2×15','3×30'], desc:'双膝着地，小腿交叉抬起，双手略宽于肩。躯干到膝盖保持直线，屈肘下放至胸口接近地面。', cues:['髋部不要弯折，身体像一块木板','膝下垫软物保护关节','胸口先向下，而不是头'], err:'只屈髋不降胸，做成鞠躬。' },
   { cat:'pushup', step:4,  name:'半俯卧撑', en:'Half Push-Up', s:['1×8','2×12','2×25'], desc:'从标准俯卧撑姿势开始，只下放一半幅度（肘弯约 90 度）即推起，全程保持躯干直线。', cues:['下放到肘弯约 90 度','身体保持一条直线','底部停 1 秒再推'], err:'幅度越做越小，最后变成抖动。' },
   { cat:'pushup', step:5,  name:'标准俯卧撑', en:'Full Push-Up', s:['1×5','2×10','2×20'], desc:'双手略宽于肩，双脚并拢，身体成直线。下放至胸口离地约一拳，再完整推起。', cues:['核心与臀部同时收紧','肘部靠近身体约 45 度','颈部中立，眼睛看向地面'], err:'耸肩、塌腰或头部前探。' },
-  { cat:'pushup', step:6,  name:'窄距俯卧撑', en:'Close Push-Up', s:['1×5','2×10','2×20'], desc:'双手与肩同宽或略窄，肘部贴近躯干完成俯卧撑，重点转移到肱三头肌。', cues:['肘尖向后，不要向两侧张开','胸口贴近双手之间','手腕不适可改用握拳撑地'], err:'双手过窄，手腕承受不住还硬练。' },
+  { cat:'pushup', step:6,  name:'窄距俯卧撑', en:'Close Push-Up', s:['1×5','2×10','2×20'], desc:'双手窄距，两食指指尖相触，肘部贴近躯干完成俯卧撑，重点转移到肱三头肌。', cues:['肘尖向后，不要向两侧张开','胸部贴近双手之间','手腕不适可改用握拳撑地'], err:'双手过窄，手腕承受不住还硬练。' },
   { cat:'pushup', step:7,  name:'偏重俯卧撑', en:'Uneven Push-Up', s:['1×5','2×10','2×20'], side:1, desc:'一只手撑地，另一只手撑在球或厚书上，重心偏向撑地手，两侧交替完成。', cues:['躯干保持水平，不歪斜','偏重侧承担约七成体重','两侧次数完全对等'], err:'身体旋转，肩膀一高一低。' },
-  { cat:'pushup', step:8,  name:'单臂半俯卧撑', en:'One-Arm Half Push-Up', s:['1×5','2×10','2×20'], side:1, desc:'双膝着地，单手撑地、另一手背在身后，下放一半幅度后推起，两侧交替。', cues:['支撑臂肘部贴近肋部','髋部保持正对地面','先从较弱一侧开始'], err:'身体向支撑侧倾倒借力。' },
-  { cat:'pushup', step:9,  name:'杠杆俯卧撑', en:'Lever Push-Up', s:['1×5','2×10','2×20'], side:1, desc:'单臂撑地，另一只手撑在球上（或轻扶同侧脚踝）辅助，下放到底后推起。', cues:['辅助手只承担少量体重','躯干尽量保持水平','逐渐降低辅助高度'], err:'辅助手用力过多，变成双臂撑。' },
-  { cat:'pushup', step:10, name:'单臂俯卧撑', en:'One-Arm Push-Up', s:['1×5','2×10','2×50'], side:1, adv:'精英', desc:'双腿并拢，单手撑地，另一手背在身后，完成完整下放与推起。终极推类力量动作。', cues:['双脚略分开以增加稳定','下放时控制，不要砸地','两侧次数保持一致'], err:'髋部扭转、双腿张开过大。' },
+  { cat:'pushup', step:8,  name:'单臂半俯卧撑', en:'One-Arm Half Push-Up', s:['1×5','2×10','2×20'], side:1, desc:'单手撑地、另一手背在身后，双腿向后伸直，下放至髋部轻触篮球（半程）后推起，两侧交替。', cues:['支撑臂肘部贴近肋部','髋部保持正对地面','先从较弱一侧开始'], err:'身体向支撑侧倾倒借力。' },
+  { cat:'pushup', step:9,  name:'杠杆俯卧撑', en:'Lever Push-Up', s:['1×5','2×10','2×20'], side:1, desc:'单臂撑地，另一只手撑在身体外侧的篮球上，下放时球向外滚、手臂伸展形成杠杆，推起时借力逐渐变小。', cues:['辅助手只承担少量体重','躯干尽量保持水平','辅助手随球滚动逐渐减力'], err:'辅助手用力过多，变成双臂撑。' },
+  { cat:'pushup', step:10, name:'单臂俯卧撑', en:'One-Arm Push-Up', s:['1×5','2×10','1×100'], side:1, adv:'精英', desc:'双腿并拢，单手撑地，另一手背在身后，完成完整下放与推起。终极推类力量动作。', cues:['双脚略分开以增加稳定','下放时控制，不要砸地','两侧次数保持一致'], err:'髋部扭转、双腿张开过大。' },
 
   { cat:'squat', step:1,  name:'肩倒立深蹲', en:'Shoulder Stand Squat', s:['1×10','2×25','3×50'], desc:'仰卧举腿，双手撑住下背，把臀腿向上送，屈膝让膝盖靠向胸口再伸直，像在空中做深蹲。', cues:['肘部撑地稳住下背','动作缓慢，不甩腿','颈部不适立即停止'], err:'用惯性甩动双腿。' },
   { cat:'squat', step:2,  name:'折刀深蹲', en:'Jackknife Squat', s:['1×10','2×20','3×40'], desc:'双脚与肩同宽，俯身双手撑地，屈膝下蹲至大腿贴住小腿，再起身。', cues:['背部尽量平直','脚跟不离地','起身时先抬臀再直膝'], err:'弓背、脚跟翘起。' },
   { cat:'squat', step:3,  name:'支撑深蹲', en:'Supported Squat', s:['1×10','2×15','3×30'], desc:'双手扶住门框或稳固物体辅助平衡，双脚与肩同宽完成完整深蹲。', cues:['扶物只为平衡，不借力','下蹲至大腿低于水平','膝盖对准脚尖方向'], err:'用手臂把自己拉起来。' },
-  { cat:'squat', step:4,  name:'半深蹲', en:'Half Squat', s:['1×8','2×35','2×50'], desc:'双脚与肩同宽，下蹲至大腿与地面平行即起身，双手可前平举保持平衡。', cues:['重心落在全脚掌','胸口始终保持抬起','下蹲 2 秒，起身 2 秒'], err:'膝盖内扣。' },
+  { cat:'squat', step:4,  name:'半深蹲', en:'Half Squat', s:['1×8','2×35','3×50'], desc:'双脚与肩同宽，下蹲至大腿与地面平行即起身，双手可前平举保持平衡。', cues:['重心落在全脚掌','胸口始终保持抬起','下蹲 2 秒，起身 2 秒'], err:'膝盖内扣。' },
   { cat:'squat', step:5,  name:'标准深蹲', en:'Full Squat', s:['1×5','2×10','2×30'], desc:'双手前平举保持平衡，下蹲至大腿低于水平，背部挺直，再起身。', cues:['髋部先后坐，膝盖顺势弯曲','全脚掌踩实，脚跟不离地','底部停 1 秒再起身'], err:'含胸弓背，膝盖过度前移。' },
   { cat:'squat', step:6,  name:'窄距深蹲', en:'Close Squat', s:['1×5','2×10','3×20'], desc:'双脚并拢、脚尖略外，双手前平举，完成完整深蹲。', cues:['双脚并拢，脚尖略向外','重心保持在脚掌中部','起身时膝盖仍对准脚尖'], err:'脚踝僵硬导致脚跟离地。' },
   { cat:'squat', step:7,  name:'偏重深蹲', en:'Uneven Squat', s:['1×5','2×10','3×20'], side:1, desc:'一只脚踩在球或厚书上，另一脚支撑，完成深蹲，两侧交替。', cues:['支撑腿全程主动发力','垫高侧只负责平衡','两侧次数保持对等'], err:'重心偏向垫高侧，支撑腿偷懒。' },
@@ -439,7 +458,7 @@ const EX = [
   { cat:'pullup', step:1,  name:'垂直引体', en:'Vertical Pull', s:['1×10','2×20','3×40'], desc:'面对横杆站立，双手握杆，身体后倾，屈臂把身体拉向横杆。', cues:['身体保持一条直线','先收紧肩胛再屈臂','脚跟不离地'], err:'只用手臂，背部完全不发力。' },
   { cat:'pullup', step:2,  name:'水平引体', en:'Horizontal Pull', s:['1×10','2×20','3×30'], desc:'在低横杆下仰卧，双手握杆，身体挺直，把胸口拉向横杆。', cues:['肩胛骨向后收','身体像一块木板','顶端停 1 秒'], err:'塌腰，髋部先下沉。' },
   { cat:'pullup', step:3,  name:'折刀引体', en:'Jackknife Pull', s:['1×10','2×15','3×20'], desc:'低横杆下双脚踩地，髋部折叠成折刀状，屈臂把身体拉向横杆。', cues:['双脚只做辅助，不蹬地','胸口主动靠近横杆','肩胛先下沉后收'], err:'用腿蹬地借力。' },
-  { cat:'pullup', step:4,  name:'半引体', en:'Half Pull-Up', s:['1×8','2×11','2×15'], desc:'借助跳起或凳子，从肘弯 90 度的位置开始，拉起至下巴过杆。', cues:['下放阶段慢速控制','顶端下巴必须过杆','逐渐降低起跳辅助'], err:'下落时完全放松，砸向地面。' },
+  { cat:'pullup', step:4,  name:'半引体', en:'Half Pull-Up', s:['1×8','2×11','3×15'], desc:'借助跳起或凳子，从肘弯 90 度的位置开始，拉起至下巴过杆。', cues:['下放阶段慢速控制','顶端下巴必须过杆','逐渐降低起跳辅助'], err:'下落时完全放松，砸向地面。' },
   { cat:'pullup', step:5,  name:'标准引体', en:'Full Pull-Up', s:['1×5','2×8','2×10'], desc:'正握横杆与肩同宽，身体悬垂，拉起至下巴过杆，再控制下放。', cues:['肩胛先下沉再收拢','双腿并拢微微前摆','下放用 2 秒'], err:'摆荡借力、半程完成。' },
   { cat:'pullup', step:6,  name:'窄距引体', en:'Close Pull-Up', s:['1×5','2×8','2×10'], desc:'双手窄握横杆（约一掌宽），拉起身体至下巴过杆。', cues:['肘部向下向后拉','核心收紧防止摆动','顶端停留 1 秒'], err:'手腕外翻不适仍硬练。' },
   { cat:'pullup', step:7,  name:'偏重引体', en:'Uneven Pull-Up', s:['1×5','2×7','2×9'], side:1, desc:'一手正握横杆，另一手握住该手腕，重心偏向主手，两侧交替。', cues:['主手承担主要力量','身体不要旋转','两侧次数保持对等'], err:'辅助手全程发力，主手没有练到。' },
@@ -460,16 +479,16 @@ const EX = [
 
   { cat:'bridge', step:1,  name:'短桥', en:'Short Bridge', s:['1×10','2×25','3×50'], desc:'仰卧屈膝，双脚踩地，把臀部抬离地面至躯干与大腿成直线。', cues:['肩部着地','臀部收紧','顶端停 1 秒'], err:'用腰过度反弓。' },
   { cat:'bridge', step:2,  name:'直桥', en:'Straight Bridge', s:['1×10','2×20','3×40'], desc:'仰卧双腿伸直，双手撑地，把臀背抬离地面。', cues:['脚跟与手掌支撑','身体成斜直线','颈部放松'], err:'耸肩、头后仰。' },
-  { cat:'bridge', step:3,  name:'高低桥', en:'Angled Bridge', s:['1×8','2×15','3×30'], desc:'双脚垫高（椅子或台阶），完成桥式抬臀。', cues:['垫高后重心前移','臀部主动收紧','量力选择高度'], err:'腰部代偿酸痛。' },
+  { cat:'bridge', step:3,  name:'高低桥', en:'Angled Bridge', s:['1×8','2×15','3×30'], desc:'坐在与膝同高的床沿或台面上，向后躺下，双手撑在头部两侧的地面，推起背部成弧形。', cues:['台面越高，角度越小、越容易','臀部主动收紧','从高台开始，逐渐降低高度'], err:'腰部代偿酸痛。' },
   { cat:'bridge', step:4,  name:'顶桥', en:'Head Bridge', s:['1×8','2×15','2×25'], desc:'仰卧屈膝，双手撑于头两侧，把髋部推起，头顶轻触地面。', cues:['头顶只轻触，不承重','肘部向上顶','先活动颈部'], err:'把全部重量压在头顶。' },
-  { cat:'bridge', step:5,  name:'半桥', en:'Half Bridge', s:['1×8','2×15','2×20'], desc:'坐地双手撑于髋后，屈膝踩地，把髋部推起成桥，头后仰但不落地。', cues:['手掌撑稳，指向前方','髋部向上推','膝盖对准脚尖'], err:'手腕压力过大，可改用握拳撑地。' },
+  { cat:'bridge', step:5,  name:'半桥', en:'Half Bridge', s:['1×8','2×15','2×20'], desc:'背后垫一个篮球或足球，双手撑在头部两侧，把双肩和背部推离地面，直到背部离开球、形成弧形。', cues:['球只托住腰部，重量靠手脚支撑','髋部尽力向上顶','背部弧形要完整，不要塌髋'], err:'手腕压力过大，可改用握拳撑地。' },
   { cat:'bridge', step:6,  name:'标准桥', en:'Full Bridge', s:['1×6','2×10','2×15'], desc:'仰卧屈膝，双手撑于头两侧，推起身体成拱形，再控制落下。', cues:['手脚同时发力','脊柱逐段伸展','颈部不适立即停止'], err:'推起后直接砸下。' },
-  { cat:'bridge', step:7,  name:'下行桥', en:'Downward Bridge', s:['1×3','2×6','2×10'], desc:'站立，双手扶腰，髋部前推，向后弯到双手撑地，再起身。', cues:['先扶腰保护下背','膝盖微屈','逐寸下行'], err:'下腰过快，失去控制。' },
+  { cat:'bridge', step:7,  name:'下行桥', en:'Downward Bridge', s:['1×3','2×6','2×10'], desc:'背对墙壁站立，双手扶墙，沿墙逐步向下走到地面成桥，再站起。', cues:['双手始终贴墙，逐步下移','膝盖微屈，身体贴近墙','逐寸下行，不追求速度'], err:'下腰过快，失去控制。' },
   { cat:'bridge', step:8,  name:'上行桥', en:'Upward Bridge', s:['1×2','2×4','2×8'], desc:'从地面桥式开始，双手推地、收髋起身站直。', cues:['手掌推地','收下巴','先练半程'], err:'用腰硬甩起身。' },
   { cat:'bridge', step:9,  name:'合桥', en:'Closing Bridge', s:['1×1','2×3','2×6'], desc:'从站立下桥到双手撑地，再推起回到站立，全程连贯。', cues:['动作连贯无停顿','重心保持在脚掌','呼吸不憋气'], err:'起身时膝盖前冲。' },
   { cat:'bridge', step:10, name:'铁板桥', en:'Stand-to-Stand Bridge', s:['1×1','2×3','2×30'], adv:'精英', desc:'站立下桥，双手撑地后推起站立，再走下桥，全程控制，身体如铁板。', cues:['全程肌肉保持紧张','幅度以能控制为限','务必在软垫上练习'], err:'追求幅度导致腰椎受伤。' },
 
-  { cat:'handstand', step:1,  name:'靠墙顶立', en:'Wall Headstand', s:['30 秒','1 分钟','2 分钟'], desc:'面墙，双手撑地，双脚沿墙上走至身体接近垂直，头顶轻触垫子保持。', cues:['头顶轻触，不压颈椎','双手与肩同宽','收腹站稳'], err:'塌腰、肘部弯曲。' },
+  { cat:'handstand', step:1,  name:'顶墙倒立', en:'Wall Headstand', s:['30 秒','1 分钟','2 分钟'], desc:'面对墙，头顶抵住软垫、与双手形成三角支撑，双脚依次蹬上墙，身体接近垂直后保持。', cues:['颈部中立，重量由双手分担','双手与肩同宽，肘部伸直','收腹，身体尽量成一条直线'], err:'塌腰、肘部弯曲。' },
   { cat:'handstand', step:2,  name:'乌鸦式', en:'Crow Stand', s:['10 秒','30 秒','1 分钟'], desc:'蹲姿双手撑地，屈肘，膝盖顶在肘后上方，把双脚离地保持平衡。', cues:['重心前移到手上','手指抓地','视线看向前下方'], err:'肘部外张、手腕压力过大。' },
   { cat:'handstand', step:3,  name:'靠墙倒立', en:'Wall Handstand', s:['30 秒','1 分钟','2 分钟'], desc:'背对墙，双手撑地，双脚蹬墙成倒立，身体成直线保持。', cues:['肩胛向上推','收腹夹臀','用指尖微调平衡'], err:'塌腰、肩部塌陷。' },
   { cat:'handstand', step:4,  name:'半倒立撑', en:'Half Handstand Push-Up', s:['1×5','2×10','2×20'], desc:'靠墙倒立，屈肘下放一半幅度后推起。', cues:['肘部向前微屈','头部不触地','控制下放'], err:'下放失控，直接落向地面。' },
@@ -477,7 +496,7 @@ const EX = [
   { cat:'handstand', step:6,  name:'窄距倒立撑', en:'Close Handstand Push-Up', s:['1×5','2×9','2×12'], desc:'靠墙倒立，双手间距窄于肩，完成倒立撑。', cues:['双手靠近','肘部贴身','手腕充分热身'], err:'手腕疼痛仍硬练。' },
   { cat:'handstand', step:7,  name:'偏重倒立撑', en:'Uneven Handstand Push-Up', s:['1×5','2×8','2×10'], side:1, desc:'靠墙倒立，一手撑在书上、一手撑地，完成倒立撑，两侧交替。', cues:['两侧高度差不宜过大','重心偏向低侧手','两侧次数对等'], err:'身体扭转。' },
   { cat:'handstand', step:8,  name:'单臂半倒立撑', en:'One-Arm Half HSPU', s:['1×4','2×6','2×8'], side:1, desc:'靠墙倒立，单臂支撑，另一手离地保持平衡，下放一半后推起。', cues:['支撑手在肩正下方','辅助手逐渐减力','先练较弱一侧'], err:'肩部前移，失去支撑。' },
-  { cat:'handstand', step:9,  name:'杠杆倒立撑', en:'Lever Handstand Push-Up', s:['1×3','2×4','2×8'], side:1, desc:'靠墙倒立，一手撑地、另一手撑在书上辅助，完成倒立撑。', cues:['辅助手只承担少量','核心保持收紧','逐步降低辅助高度'], err:'辅助手发力过多。' },
+  { cat:'handstand', step:9,  name:'杠杆倒立撑', en:'Lever Handstand Push-Up', s:['1×3','2×4','2×6'], side:1, desc:'靠墙倒立，一手撑地、另一手撑在书上辅助，完成倒立撑。', cues:['辅助手只承担少量','核心保持收紧','逐步降低辅助高度'], err:'辅助手发力过多。' },
   { cat:'handstand', step:10, name:'单臂倒立撑', en:'One-Arm Handstand Push-Up', s:['1×1','2×2','1×5'], side:1, adv:'精英', desc:'靠墙倒立，单臂完成下放与推起。', cues:['肩胛稳定','下放幅度以安全为先','务必有人在旁保护'], err:'追求次数，忽略肩部疼痛。' }
 ];
 
