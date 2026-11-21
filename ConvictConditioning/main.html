@@ -520,7 +520,8 @@ function mapLegacy(id){ return LEGACY_MAP[id] || (EX_BY_ID[id] ? id : null); }
 
 
 /* ---------------- 图例照片：按 img_{艺}_{式}_{序号}.jpg 自动探测 ---------------- */
-const IMG_DIR = 'img/';
+/* 图例托管在阿里云 OSS，避免 GitHub 直连图片加载过慢；本地 img/ 目录仅作备份 */
+const IMG_DIR = 'https://testbucket5037.oss-cn-beijing.aliyuncs.com/ConvictConditioning/';
 const IMG_EXTS = ['jpg','png','webp'];
 const IMG_MAX = 8;
 const imgCache = new Map();  // id -> Promise<string[]>（探测中或已缓存）
