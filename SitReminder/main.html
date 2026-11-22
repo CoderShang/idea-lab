@@ -1,0 +1,1608 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="面向坐班族的工位健康伴侣：按间隔提醒起身活动与小口补水，带活动倒计时、饮水记录、随机拉伸建议与今日统计，纯静态、零依赖、数据仅保存在本机。">
+<meta name="theme-color" content="#0b0b0d">
+<!-- 图标内联为 data URI，避免浏览器额外请求 /favicon.ico -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='9' fill='%230b0b0d'/><g fill='none' stroke='%23e4b83e' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='20' cy='20' r='12.5'/><path d='M20 12.5V20l5 3.5'/></g></svg>">
+<title>工位伴侣 · 久坐、喝水与护眼</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0b0b0d;--panel:#121216;--panel2:#17171d;--line:#26262e;--line2:#34343e;--text:#ece9e1;--muted:#a29e93;--dim:#6f6c64;--gold:#e4b83e;--green:#55b07c;--red:#c9604f}
+html{-webkit-text-size-adjust:100%;font-size:clamp(15.5px,.18vw + 13.5px,16.5px)}
+body{background-color:var(--bg);background-image:radial-gradient(1400px 660px at 50% -8%,#191510 0%,rgba(11,11,13,0) 62%);background-repeat:no-repeat;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:1rem;line-height:1.55;min-height:100vh;min-height:100dvh}
+button{font:inherit}
+button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+[hidden]{display:none!important}
+.wrap{width:100%;max-width:1120px;margin:0 auto;padding:0 clamp(16px,2vw,40px) clamp(28px,2.4vw,44px)}
+/* 顶部 */
+.masthead{display:flex;align-items:center;justify-content:space-between;gap:clamp(14px,1.4vw,26px);flex-wrap:wrap;padding:clamp(16px,1.5vw,24px) 0 clamp(14px,1.3vw,20px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:clamp(11px,.9vw,14px);min-width:0}
+.seal{width:clamp(50px,2.8vw,58px);height:clamp(50px,2.8vw,58px);flex:none;border:1px solid rgba(240,205,120,.55);border-radius:clamp(13px,.85vw,15px);background:linear-gradient(150deg,#cfaa52,#94701f);box-shadow:inset 0 1px 0 rgba(255,255,255,.24),0 2px 12px rgba(201,160,68,.14);color:#11100c;display:grid;place-items:center}
+.seal svg{width:86%;height:86%;display:block}
+.brand h1{font-size:clamp(1.1875rem,1.1vw,1.375rem);font-weight:600;letter-spacing:.05em;line-height:1.25}
+.brand p{font-size:clamp(.6875rem,.55vw,.75rem);color:var(--dim);letter-spacing:.14em;margin-top:3px}
+.stats{display:flex;gap:clamp(7px,.7vw,10px);flex-wrap:wrap}
+.stat{min-width:clamp(92px,7vw,120px);padding:clamp(8px,.7vw,11px) clamp(12px,.9vw,16px);background:var(--panel);border:1px solid var(--line);border-radius:clamp(10px,.8vw,13px)}
+.stat b{display:block;font-size:clamp(1.25rem,1.2vw,1.5rem);font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1.3;white-space:nowrap}
+.stat span{font-size:clamp(.6875rem,.58vw,.75rem);color:var(--muted);letter-spacing:.08em}
+/* 主区 */
+.hero{display:grid;grid-template-columns:minmax(300px,400px) minmax(0,1fr);gap:clamp(12px,1vw,16px);margin:clamp(16px,1.4vw,22px) 0 0}
+.timer-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:clamp(10px,.9vw,14px);background:linear-gradient(160deg,#17150f,#101013);border:1px solid var(--line);border-radius:clamp(14px,1vw,16px);padding:clamp(18px,1.6vw,26px) clamp(16px,1.3vw,22px);--ringc:var(--gold);transition:border-color .4s,background .4s}
+.timer-card.resting{--ringc:var(--green);border-color:rgba(85,176,124,.4);background:linear-gradient(160deg,#121a15,#101013)}
+.timer-card.paused{--ringc:#807c70;border-color:var(--line2)}
+.ring-box{position:relative;width:clamp(170px,15vw,208px);height:clamp(170px,15vw,208px)}
+.ring-box svg{width:100%;height:100%;display:block;overflow:visible}
+.ring-track{fill:none;stroke:var(--line);stroke-width:9}
+.ring-prog{fill:none;stroke:var(--ringc);stroke-width:9;stroke-linecap:round;stroke-dasharray:389.56;stroke-dashoffset:0;transform:rotate(-90deg);transform-origin:center;transition:stroke-dashoffset .55s linear,stroke .4s,filter .4s;filter:drop-shadow(0 0 6px rgba(228,184,62,.22))}
+.timer-card.resting .ring-prog{animation:rest-pulse 2.4s ease-in-out infinite}
+@keyframes rest-pulse{0%,100%{filter:drop-shadow(0 0 5px rgba(111,211,154,.28))}50%{filter:drop-shadow(0 0 13px rgba(111,211,154,.6))}}
+.ring-center{position:absolute;top:0;right:0;bottom:0;left:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+.ring-center b{font-size:clamp(2rem,2.6vw,2.625rem);font-weight:600;line-height:1;font-variant-numeric:tabular-nums;letter-spacing:.02em}
+.ring-center span{font-size:clamp(.71875rem,.62vw,.8125rem);color:var(--muted);letter-spacing:.18em;text-indent:.18em}
+.session-note{min-height:3.2em;display:grid;place-items:center;text-align:center;font-size:clamp(.8125rem,.7vw,.875rem);color:var(--muted);line-height:1.6;padding:0 8px}
+.session-note b{color:var(--text);font-weight:600}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:8px;width:100%;margin-top:2px}
+.controls .main-btn{grid-column:1/-1}
+.main-btn{display:flex;align-items:center;justify-content:center;width:100%;padding:clamp(11px,.95vw,14px) 16px;border:1px solid transparent;border-radius:clamp(10px,.75vw,12px);background:linear-gradient(135deg,#f4d980,#d9a92f 58%,#c9962c);color:#1b1608;font-weight:700;font-size:clamp(.875rem,.78vw,.9375rem);letter-spacing:.14em;cursor:pointer;box-shadow:0 8px 22px rgba(228,184,62,.2),inset 0 1px 0 rgba(255,255,255,.4);transition:transform .12s,box-shadow .2s,background .2s,color .2s,border-color .2s}
+.main-btn:hover{transform:translateY(-1px);box-shadow:0 10px 26px rgba(228,184,62,.32),inset 0 1px 0 rgba(255,255,255,.4)}
+.main-btn:active{transform:scale(.98)}
+.main-btn.resting{background:linear-gradient(135deg,#8fdcaf,#4a9e6e 58%,#3f8f63);color:#0b1a10;box-shadow:0 8px 22px rgba(85,176,124,.22),inset 0 1px 0 rgba(255,255,255,.3)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:clamp(9px,.8vw,12px) 14px;background:var(--panel2);border:1px solid var(--line2);border-radius:clamp(9px,.7vw,11px);color:var(--muted);font-size:clamp(.8125rem,.7vw,.875rem);cursor:pointer;transition:border-color .15s,color .15s,background .15s}
+.btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold)}
+.btn:disabled{opacity:.4;cursor:default}
+/* 设置 */
+.settings{background:var(--panel);border:1px solid var(--line);border-radius:clamp(14px,1vw,16px);padding:clamp(16px,1.3vw,22px) clamp(16px,1.3vw,24px);display:flex;flex-direction:column;gap:clamp(10px,.9vw,14px);min-width:0}
+.settings h2{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:clamp(.9375rem,.8vw,1.0625rem);font-weight:600;letter-spacing:.1em}
+.settings h2.sub{margin-top:clamp(4px,.4vw,8px);padding-top:clamp(11px,1vw,15px);border-top:1px solid var(--line)}
+.settings h2 span{font-size:clamp(.6875rem,.58vw,.75rem);font-weight:400;color:var(--dim);letter-spacing:.04em}
+.set-row{display:flex;align-items:center;justify-content:space-between;gap:clamp(10px,.9vw,16px);padding:clamp(9px,.8vw,12px) 0;border-bottom:1px solid var(--line)}
+.set-label{min-width:0}
+.set-label b{display:block;font-size:clamp(.84375rem,.75vw,.9375rem);font-weight:600}
+.set-label i{display:block;font-style:normal;font-size:clamp(.71875rem,.62vw,.78125rem);color:var(--dim);margin-top:2px;line-height:1.5;min-height:1.5em}
+.stepper{flex:none;display:flex;align-items:center;gap:2px;background:#0e0e11;border:1px solid var(--line);border-radius:10px;padding:3px}
+.stepper button{width:30px;height:30px;display:grid;place-items:center;background:none;border:0;border-radius:7px;color:var(--muted);font-size:1.0625rem;font-weight:600;cursor:pointer;transition:.15s}
+.stepper button:hover{background:var(--panel2);color:var(--gold)}
+.stepper input{width:46px;height:30px;background:none;border:0;color:var(--text);font:inherit;font-size:.9375rem;font-weight:600;text-align:center;font-variant-numeric:tabular-nums;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.stepper em{font-style:normal;font-size:.71875rem;color:var(--dim);padding-right:8px;letter-spacing:.06em}
+.quick{display:flex;gap:6px;flex-wrap:wrap;margin-top:-4px;padding-bottom:2px}
+.quick button{padding:5px 10px;background:#0e0e11;border:1px solid var(--line);border-radius:8px;color:var(--muted);font-size:clamp(.71875rem,.62vw,.78125rem);cursor:pointer;transition:.15s}
+.quick button:hover{border-color:var(--gold);color:var(--gold)}
+.quick button.on{border-color:rgba(228,184,62,.6);background:rgba(228,184,62,.1);color:var(--gold)}
+.switch{position:relative;flex:none;display:inline-flex;cursor:pointer;padding:10px 0;margin:-10px 0}
+.switch input{position:absolute;opacity:0;pointer-events:none}
+.switch .track{display:block;width:44px;height:25px;border-radius:20px;background:#26262e;border:1px solid var(--line2);position:relative;transition:.2s}
+.switch .track::after{content:'';position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#8d897d;transition:.2s}
+.switch input:checked + .track{background:rgba(228,184,62,.18);border-color:rgba(228,184,62,.6)}
+.switch input:checked + .track::after{left:21px;background:var(--gold)}
+.switch input:focus-visible + .track{outline:2px solid var(--gold);outline-offset:2px}
+.switch input:disabled + .track{opacity:.4;cursor:not-allowed}
+.set-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:2px}
+.foot-note{font-size:clamp(.71875rem,.62vw,.78125rem);color:var(--dim);line-height:1.75}
+/* 建议 */
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:clamp(12px,.9vw,14px);padding:clamp(14px,1.15vw,20px) clamp(14px,1.2vw,22px);min-width:0}
+.tips{margin-top:clamp(12px,1vw,16px)}
+.panel h2{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:clamp(.9375rem,.8vw,1.0625rem);font-weight:600;letter-spacing:.1em;margin-bottom:clamp(9px,.8vw,12px)}
+.panel h2 span{font-size:clamp(.6875rem,.58vw,.75rem);font-weight:400;color:var(--dim);letter-spacing:.04em}
+.tip-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(225px,1fr));gap:clamp(8px,.7vw,10px)}
+.tip{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:clamp(10px,.85vw,13px);transition:border-color .3s,background .3s}
+.tip .n{font-size:clamp(.625rem,.55vw,.6875rem);color:var(--gold);letter-spacing:.16em}
+.tip b{display:block;font-size:clamp(.84375rem,.75vw,.90625rem);font-weight:600;margin:3px 0 2px}
+.tip p{font-size:clamp(.75rem,.65vw,.8125rem);color:var(--dim);line-height:1.65}
+.tip.hot{border-color:rgba(85,176,124,.5);background:rgba(85,176,124,.07)}
+.tip.hot .n{color:var(--green)}
+/* 提醒横幅 */
+.banner{position:fixed;top:clamp(12px,2vh,26px);left:50%;z-index:60;display:flex;align-items:center;gap:10px;max-width:min(92vw,540px);padding:clamp(10px,.9vw,14px) clamp(14px,1.2vw,18px);background:#1a1710;border:1px solid rgba(228,184,62,.55);border-radius:12px;box-shadow:0 18px 50px rgba(0,0,0,.6);color:var(--text);font-size:clamp(.84375rem,.75vw,.9375rem);cursor:pointer;opacity:0;transform:translate(-50%,-140%);transition:transform .45s cubic-bezier(.2,1.2,.3,1),opacity .3s}
+.banner.show{opacity:1;transform:translate(-50%,0)}
+.banner.back{border-color:rgba(85,176,124,.55);background:#101a14}
+.banner i{flex:none;width:8px;height:8px;border-radius:50%;background:var(--gold);box-shadow:0 0 10px var(--gold);animation:dot-blink 1.1s ease-in-out infinite}
+.banner.back i{background:var(--green);box-shadow:0 0 10px var(--green)}
+.banner span{flex:1;min-width:0}
+.banner-btn{flex:none;padding:7px 11px;border:1px solid rgba(228,184,62,.55);border-radius:8px;background:rgba(228,184,62,.14);color:var(--gold);font-size:clamp(.71875rem,.62vw,.78125rem);font-weight:600;white-space:nowrap;cursor:pointer}
+@keyframes dot-blink{0%,100%{opacity:1}50%{opacity:.25}}
+/* 全屏起身遮罩：iOS 上 overflow:hidden 锁不住滚动，配合 JS 的 position:fixed 锁定 */
+body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
+.cover{position:fixed;top:0;right:0;bottom:0;left:0;z-index:80;display:flex;align-items:center;justify-content:center;padding:clamp(16px,3vw,40px);background:rgba(5,5,7,.92);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overscroll-behavior:contain;opacity:0;visibility:hidden;transition:opacity .3s,visibility .3s}
+.cover.open{opacity:1;visibility:visible}
+.cover-card{width:min(520px,100%);max-height:92vh;max-height:88dvh;overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;-ms-overflow-style:none;background:linear-gradient(170deg,#1a1710,#101013);border:1px solid rgba(228,184,62,.4);border-radius:clamp(16px,1.6vw,20px);padding:clamp(20px,2.4vw,32px);text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.7);transform:translateY(16px) scale(.97);transition:transform .35s cubic-bezier(.2,1.2,.3,1)}
+.cover.open .cover-card{transform:none}
+/* 弹窗内不显示滚动条：滚动条在暗色卡片上很扎眼，仍可用滚轮/滑动滚动 */
+.cover-card::-webkit-scrollbar{width:0;height:0}
+.cover-eyebrow{font-size:clamp(.6875rem,.6vw,.75rem);color:var(--gold);letter-spacing:.3em;text-indent:.3em}
+.cover h2{font-size:clamp(1.5rem,2.4vw,1.875rem);font-weight:600;letter-spacing:.1em;margin:8px 0 6px}
+.cover-sub{font-size:clamp(.84375rem,.75vw,.9375rem);color:var(--muted);line-height:1.7}
+.cover-sub b{color:var(--text);font-weight:600}
+.cover-time{display:flex;flex-direction:column;align-items:center;gap:2px;margin:clamp(14px,1.8vw,20px) 0 clamp(12px,1.6vw,16px);padding:clamp(10px,1.2vw,14px);background:#0e0e11;border:1px solid var(--line);border-radius:12px}
+.cover-time b{font-size:clamp(2rem,3.6vw,2.75rem);font-weight:600;line-height:1.15;color:var(--green);font-variant-numeric:tabular-nums}
+.cover-time span{font-size:clamp(.6875rem,.6vw,.75rem);color:var(--dim);letter-spacing:.2em;text-indent:.2em}
+.cover-tips{display:flex;flex-direction:column;gap:6px;margin-bottom:clamp(14px,1.8vw,18px);text-align:left}
+.cover-tips p{font-size:clamp(.78125rem,.7vw,.84375rem);color:var(--muted);background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:8px 11px;line-height:1.6}
+.cover-tips b{color:var(--text);font-weight:600}
+.cover-actions{display:flex;flex-direction:column;gap:8px}
+.cover .main-btn{background:linear-gradient(135deg,#8fdcaf,#4a9e6e 58%,#3f8f63);color:#0b1a10;box-shadow:0 8px 22px rgba(85,176,124,.25),inset 0 1px 0 rgba(255,255,255,.3)}
+.cover-note{font-size:clamp(.6875rem,.6vw,.75rem);color:var(--dim);margin-top:12px;line-height:1.6}
+/* 补水提醒的主题色：与起身提醒区分，但强度一致 */
+.cover.kind-water .cover-card{border-color:rgba(125,211,224,.34)}
+.cover.kind-water .cover-eyebrow,.cover.kind-water .cover-time b{color:#7dd3e0}
+.cover.kind-water .main-btn{background:linear-gradient(135deg,#a6e8f2,#4aa8b8 58%,#3d94a2);color:#062024;box-shadow:0 8px 22px rgba(125,211,224,.22),inset 0 1px 0 rgba(255,255,255,.35)}
+/* 护眼提醒的主题色：紫色，与另两类区分 */
+.cover.kind-eye .cover-card{border-color:rgba(185,166,255,.34)}
+.cover.kind-eye .cover-eyebrow,.cover.kind-eye .cover-time b{color:#b9a6ff}
+.cover.kind-eye .main-btn{background:linear-gradient(135deg,#d3c7ff,#8070dd 58%,#6d5cc4);color:#100c24;box-shadow:0 8px 22px rgba(185,166,255,.22),inset 0 1px 0 rgba(255,255,255,.35)}
+/* 30 秒微运动：把「点掉弹窗」变成「真的动一下」 */
+.cover-mic{display:flex;align-items:baseline;gap:10px;margin-bottom:clamp(12px,1.4vw,16px);padding:10px 12px;background:var(--panel2);border:1px dashed rgba(228,184,62,.42);border-radius:10px;text-align:left}
+.cover-mic[hidden]{display:none}
+.cover.kind-eye .cover-mic,.cover.kind-water .cover-mic{display:none}
+.cover-mic b{flex:none;font-size:clamp(.8125rem,.72vw,.875rem);color:var(--gold);font-weight:600}
+.cover-mic span{font-size:clamp(.75rem,.65vw,.8125rem);color:var(--muted);line-height:1.55}
+.cover .main-btn.done{animation:mic-done 1s ease-in-out infinite}
+@keyframes mic-done{0%,100%{box-shadow:0 8px 22px rgba(85,176,124,.25)}50%{box-shadow:0 8px 28px rgba(85,176,124,.62)}}
+/* 矮视口（1366×768、1280×720 等笔记本）压缩排版，让弹窗一屏放下，不靠滚动 */
+@media (max-height:720px){
+  .cover-card{padding:18px 20px}
+  .cover h2{font-size:1.375rem;margin:5px 0 4px}
+  .cover-sub{line-height:1.55}
+  .cover-time{margin:10px 0 9px;padding:9px}
+  .cover-time b{font-size:2rem}
+  .cover-mic{margin-bottom:10px;padding:8px 10px}
+  .cover-tips{gap:5px;margin-bottom:10px}
+  .cover-tips p{padding:6px 10px;line-height:1.5}
+  .cover-actions{gap:6px}
+  .cover-note{margin-top:8px}
+}
+/* 刘海屏与手势条安全区（iOS 全屏、Android 挖孔屏） */
+@supports (padding:env(safe-area-inset-left)){
+  .wrap{padding-left:max(clamp(16px,2vw,40px),env(safe-area-inset-left));padding-right:max(clamp(16px,2vw,40px),env(safe-area-inset-right));padding-bottom:max(clamp(28px,2.4vw,44px),env(safe-area-inset-bottom))}
+  .banner{top:calc(clamp(12px,2vh,26px) + env(safe-area-inset-top))}
+  .cover{padding-top:max(clamp(16px,3vw,40px),env(safe-area-inset-top));padding-bottom:max(clamp(16px,3vw,40px),env(safe-area-inset-bottom))}
+}
+/* 补水 */
+.water{margin-top:clamp(12px,1vw,16px);transition:border-color .3s,box-shadow .3s}
+.water.due{border-color:rgba(228,184,62,.65);box-shadow:0 0 0 1px rgba(228,184,62,.18),0 16px 40px rgba(0,0,0,.35)}
+.water-head{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.water-head h2{margin-bottom:0}
+.water-grid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr);gap:clamp(14px,1.6vw,26px);margin-top:clamp(10px,.9vw,14px)}
+.water-top{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.water-value{display:flex;align-items:baseline;gap:6px}
+.water-value b{font-size:clamp(2rem,2.8vw,2.5rem);font-weight:600;color:var(--gold);line-height:1;font-variant-numeric:tabular-nums}
+.water-value span{font-size:clamp(.8125rem,.7vw,.875rem);color:var(--muted)}
+.water-value i{font-style:normal;color:var(--text)}
+.water-left{font-size:clamp(.75rem,.65vw,.8125rem);color:var(--dim)}
+.water-bar{height:10px;margin:clamp(10px,.9vw,14px) 0 8px;background:#0e0e11;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.water-bar i{display:block;width:0;height:100%;border-radius:6px;background:linear-gradient(90deg,#3f8f63,#8fdcaf);transition:width .5s ease}
+.water-meta{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;font-size:clamp(.71875rem,.62vw,.78125rem);color:var(--dim)}
+.water-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:clamp(10px,.9vw,14px)}
+.water-add{padding:10px 14px;border:1px solid rgba(228,184,62,.42);border-radius:10px;background:rgba(228,184,62,.08);color:var(--gold);font-size:clamp(.8125rem,.7vw,.875rem);font-weight:600;letter-spacing:.04em;cursor:pointer;transition:background .15s,border-color .15s,transform .12s}
+.water-add:hover{background:rgba(228,184,62,.16);border-color:var(--gold)}
+.water-add:active{transform:scale(.97)}
+.water-conf{display:flex;flex-direction:column;gap:10px;border-left:1px solid var(--line);padding-left:clamp(14px,1.4vw,22px);min-width:0}
+.water-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.water-row b{font-size:clamp(.8125rem,.72vw,.875rem);font-weight:600}
+.water-row .quick{margin:0;padding:0}
+.water-src{font-size:clamp(.6875rem,.6vw,.75rem);color:var(--dim);line-height:1.7;margin-top:auto}
+/* 提醒通道：两类提醒共用，每项一个开关 */
+.channels{margin-top:clamp(12px,1vw,16px)}
+.chan-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(272px,1fr));gap:0 clamp(16px,1.6vw,30px);margin-top:clamp(6px,.5vw,8px)}
+.chan-grid .set-row:last-child{border-bottom:0}
+.ch-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:clamp(10px,.9vw,14px)}
+/* 语音播报开启时的提示色 */
+.channels .set-row b{letter-spacing:.02em}
+/* 数据管理：误点后的最后一道保险 */
+.data{margin-top:clamp(12px,1vw,16px)}
+.data-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:0 clamp(16px,1.6vw,30px);margin-top:clamp(6px,.5vw,8px)}
+.data-grid .set-row:last-child{border-bottom:0}
+.btn.danger{flex:none;min-width:96px;color:#e0857c;border-color:rgba(224,133,124,.36);background:rgba(224,133,124,.07);white-space:nowrap}
+.btn.danger:hover:not(:disabled){border-color:#e0857c;color:#f0a49c;background:rgba(224,133,124,.15)}
+.btn.danger.arm{color:#ffe2de;border-color:#ff8f85;background:rgba(255,95,74,.22)}
+/* 页脚 */
+.foot{margin-top:clamp(18px,1.5vw,24px);font-size:clamp(.6875rem,.6vw,.75rem);color:#5c5851;line-height:1.9;text-align:center;border-top:1px solid var(--line);padding-top:clamp(16px,1.4vw,22px)}
+.foot p + p{margin-top:2px}
+/* iOS 输入框字号不小于 16px，避免聚焦时页面被缩放 */
+@supports (-webkit-touch-callout:none){ .stepper input{font-size:16px} }
+@media (max-width:820px){
+  .hero{grid-template-columns:1fr}
+  .stats{width:100%}
+  .stat{flex:1;min-width:0}
+  .stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ring-box{width:clamp(180px,42vw,220px);height:clamp(180px,42vw,220px)}
+  .stepper input{font-size:16px}
+  /* 触屏热区不小于 44px */
+  .main-btn{min-height:48px}
+  .btn{padding:12px 16px;min-height:44px}
+  .stepper button{width:38px;height:38px}
+  .stepper input{width:52px;height:38px}
+  .quick button{padding:9px 13px}
+  .water-grid{grid-template-columns:1fr}
+  .water-conf{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:14px}
+  .water-add{min-height:44px}
+}
+@media (max-width:420px){
+  .controls{grid-template-columns:1fr}
+  .controls .main-btn{grid-column:auto}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="masthead">
+    <div class="brand">
+      <div class="seal" aria-hidden="true">
+        <svg viewBox="0 0 40 40" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="20" cy="20" r="15" stroke-width="2.4"/>
+          <path d="M20 11.5V20l6 3.8" stroke-width="2.4"/>
+        </svg>
+      </div>
+      <div>
+        <h1>工位伴侣</h1>
+        <p>DESK MATE · SIT LESS, DRINK MORE, LOOK FAR</p>
+      </div>
+    </div>
+    <div class="stats" aria-label="今日统计">
+      <div class="stat"><b id="stStands">0</b><span>今日起身</span></div>
+      <div class="stat"><b id="stSit">0 分</b><span>今日久坐</span></div>
+      <div class="stat"><b id="stRest">0 分</b><span>今日活动</span></div>
+      <div class="stat"><b id="stWater">0 ml</b><span>今日饮水</span></div>
+    </div>
+  </header>
+
+  <main class="hero">
+    <section class="timer-card" id="timerCard" aria-label="久坐计时器">
+      <div class="ring-box">
+        <svg viewBox="0 0 160 160" aria-hidden="true">
+          <circle class="ring-track" cx="80" cy="80" r="62"></circle>
+          <circle class="ring-prog" id="ringProg" cx="80" cy="80" r="62"></circle>
+        </svg>
+        <div class="ring-center">
+          <b id="timeText">45:00</b>
+          <span id="stateText" aria-live="polite">准备开始</span>
+        </div>
+      </div>
+      <p class="session-note"><span id="sessionNote"></span></p>
+      <div class="controls">
+        <button type="button" class="main-btn" id="mainBtn">开始久坐计时</button>
+        <button type="button" class="btn" id="skipBtn" disabled>跳过本轮</button>
+        <button type="button" class="btn" id="resetBtn" disabled>重置</button>
+      </div>
+    </section>
+
+    <aside class="settings" aria-label="提醒设置">
+      <h2>久坐提醒 <span>可单独开关与调参</span></h2>
+      <div class="set-row">
+        <div class="set-label"><b>启用久坐提醒</b><i>坐满设定时长后，按下方「提醒通道」提醒你</i></div>
+        <label class="switch"><input type="checkbox" id="standSwitch" checked><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>久坐间隔</b><i>坐满这么久后提醒你起身</i></div>
+        <div class="stepper">
+          <button type="button" data-step="sit:-5" aria-label="减少 5 分钟">−</button>
+          <input id="sitInput" type="number" min="1" max="180" value="45" inputmode="numeric" aria-label="久坐间隔分钟数">
+          <button type="button" data-step="sit:5" aria-label="增加 5 分钟">+</button>
+          <em>分钟</em>
+        </div>
+      </div>
+      <div class="quick" role="group" aria-label="常用久坐间隔">
+        <button type="button" data-quick="30">30 分钟</button>
+        <button type="button" data-quick="45">45 分钟</button>
+        <button type="button" data-quick="60">60 分钟</button>
+        <button type="button" data-quick="90">90 分钟</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>活动时长</b><i>起身活动多久后自动开始下一轮</i></div>
+        <div class="stepper">
+          <button type="button" data-step="rest:-1" aria-label="减少 1 分钟">−</button>
+          <input id="restInput" type="number" min="1" max="30" value="5" inputmode="numeric" aria-label="活动时长分钟数">
+          <button type="button" data-step="rest:1" aria-label="增加 1 分钟">+</button>
+          <em>分钟</em>
+        </div>
+      </div>
+      <p class="foot-note">关闭久坐提醒后，计时仍会按间隔滚动，但不会弹任何提醒。</p>
+      <h2 class="sub">护眼提醒 <span>20-20-20 法则</span></h2>
+      <div class="set-row">
+        <div class="set-label"><b>启用护眼提醒</b><i>连续用眼一段时间后，提醒你看向 6 米外</i></div>
+        <label class="switch"><input type="checkbox" id="eyeSwitch" checked><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>护眼间隔</b><i>专注这么久后让眼睛歇一次</i></div>
+        <div class="stepper">
+          <button type="button" data-step="eye:-5" aria-label="减少 5 分钟">−</button>
+          <input id="eyeInput" type="number" min="5" max="120" value="45" inputmode="numeric" aria-label="护眼间隔分钟数">
+          <button type="button" data-step="eye:5" aria-label="增加 5 分钟">+</button>
+          <em>分钟</em>
+        </div>
+      </div>
+      <div class="quick" role="group" aria-label="常用护眼间隔">
+        <button type="button" data-egap="20">20 分钟</button>
+        <button type="button" data-egap="30">30 分钟</button>
+        <button type="button" data-egap="45">45 分钟</button>
+        <button type="button" data-egap="60">60 分钟</button>
+      </div>
+      <p class="foot-note">每 20 分钟看 20 英尺（约 6 米）外 20 秒。和其他提醒撞车时会合成一次，不会轮番轰炸。</p>
+    </aside>
+  </main>
+
+  <section class="panel water" id="waterPanel" aria-label="喝水提醒">
+    <div class="water-head">
+      <h2>补水 <span id="waterHint">少量多次 · 每次约 200 ml</span></h2>
+      <label class="switch" aria-label="喝水提醒开关"><input type="checkbox" id="waterSwitch" checked><span class="track"></span></label>
+    </div>
+    <div class="water-grid">
+      <div class="water-main">
+        <div class="water-top">
+          <div class="water-value"><b id="waterMl">0</b><span>/ <i id="waterGoalText">1700</i> ml</span></div>
+          <div class="water-left" id="waterLeft">还差 1700 ml</div>
+        </div>
+        <div class="water-bar" id="waterBar" role="progressbar" aria-label="今日饮水进度" aria-valuemin="0" aria-valuemax="1700" aria-valuenow="0"><i id="waterFill"></i></div>
+        <div class="water-meta"><span id="waterMeta">今日 0 杯 · 尚未记录</span><span id="waterNext">下次提醒 —</span></div>
+        <div class="water-actions">
+          <button type="button" class="water-add" data-add="150">+150 ml</button>
+          <button type="button" class="water-add" data-add="200">+200 ml</button>
+          <button type="button" class="water-add" data-add="300">+300 ml</button>
+          <button type="button" class="btn" id="waterUndo" disabled>撤销上一杯</button>
+        </div>
+      </div>
+      <div class="water-conf">
+        <div class="water-row"><b>提醒间隔</b>
+          <div class="quick" id="waterQuick" role="group" aria-label="喝水提醒间隔">
+            <button type="button" data-wgap="30">30 分</button>
+            <button type="button" data-wgap="45">45 分</button>
+            <button type="button" data-wgap="60">60 分</button>
+            <button type="button" data-wgap="90">90 分</button>
+          </div>
+        </div>
+        <div class="water-row"><b>每日目标</b>
+          <div class="quick" id="goalQuick" role="group" aria-label="每日饮水目标">
+            <button type="button" data-wgoal="1500">1500 ml</button>
+            <button type="button" data-wgoal="1700">1700 ml</button>
+            <button type="button" data-wgoal="2000">2000 ml</button>
+          </div>
+        </div>
+        <p class="water-src">依据《中国居民膳食指南（2022）》：温和气候、轻体力活动下，成年男性每日饮水 1700 ml、女性 1500 ml，主动少量多次，每次约 200 ml；高温、出汗多时上调。白水或淡茶优先，不用含糖饮料代替。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel channels" aria-label="提醒通道">
+    <h2>提醒通道 <span>三类提醒共用同一套，全开时最不容易漏</span></h2>
+    <div class="chan-grid">
+      <div class="set-row">
+        <div class="set-label"><b>循环提示音</b><i id="soundNote">到点循环双音，约 90 秒</i></div>
+        <label class="switch"><input type="checkbox" id="soundSwitch" checked><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>语音播报</b><i id="voiceNote">直接念出「该起身了」「该喝水了」</i></div>
+        <label class="switch"><input type="checkbox" id="voiceSwitch" checked><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>震动提醒</b><i id="vibrateNote">到点后持续震动约 90 秒，点按横幅即停</i></div>
+        <label class="switch"><input type="checkbox" id="vibrateSwitch" checked><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>桌面通知</b><i id="notifyNote">首次开启时会请求浏览器通知权限</i></div>
+        <label class="switch"><input type="checkbox" id="notifySwitch" checked><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>全屏遮罩</b><i>到点后整页拦截，带倒计时与一键回应</i></div>
+        <label class="switch"><input type="checkbox" id="coverSwitch" checked><span class="track"></span></label>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>独立提醒窗</b><i id="popupNote">需允许本站弹窗；浏览器不允许网页强制抢占前台</i></div>
+        <label class="switch"><input type="checkbox" id="popupSwitch"><span class="track"></span></label>
+      </div>
+    </div>
+    <div class="ch-actions">
+      <button type="button" class="btn" id="testBtn">发送测试提醒（走全部通道）</button>
+    </div>
+    <p class="foot-note">提醒期间标题与图标会闪烁；未回应时每 45 秒再提醒一次，5 分钟后自动收起遮罩，转为稍后再提。页面最小化或切到后台仍按真实时间计时；手机震动需页面保持前台亮屏，iPhone 不支持网页震动与通知。</p>
+  </section>
+
+  <section class="panel tips" aria-label="活动建议">
+    <h2>起身做点什么 <span id="tipNote">休息时会随机点亮 3 项</span></h2>
+    <div class="tip-grid" id="tipGrid"></div>
+  </section>
+
+  <section class="panel data" aria-label="数据管理">
+    <h2>数据 <span>清记录不动设置，全部重置才回到默认</span></h2>
+    <div class="data-grid">
+      <div class="set-row">
+        <div class="set-label"><b>今日饮水</b><i id="dataWaterNote">0 ml · 0 杯</i></div>
+        <button type="button" class="btn danger" id="clearWater">清空</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>今日统计</b><i id="dataStatsNote">起身 0 次 · 久坐 0 分 · 护眼 0 次</i></div>
+        <button type="button" class="btn danger" id="clearStats">清空</button>
+      </div>
+      <div class="set-row">
+        <div class="set-label"><b>全部本地数据</b><i>饮水、统计与所有提醒设置一起恢复默认</i></div>
+        <button type="button" class="btn danger" id="clearAll">重置</button>
+      </div>
+    </div>
+    <p class="foot-note">误点了补水按钮：先在补水卡里连点「撤销上一杯」，可以一路撤回今天任意一次记录；确实记乱了，再用这里直接清空。为防止误清，点一次是准备，再点一次才真正执行。</p>
+  </section>
+
+  <footer class="foot">
+    <p>提醒依赖页面保持打开，关闭页面即停止计时；设置、饮水量与统计仅保存在本机浏览器，不上传任何服务器。</p>
+    <p>任何计时器都替代不了真的站起来，也替代不了自己喝下那杯水。</p>
+  </footer>
+</div>
+
+<div class="banner" id="banner"><i></i><span id="bannerText"></span><button type="button" class="banner-btn" id="bannerAction" hidden></button></div>
+<div class="cover" id="cover" role="dialog" aria-modal="true" aria-labelledby="coverTitle">
+  <div class="cover-card">
+    <span class="cover-eyebrow" id="coverEyebrow">TIME TO STAND</span>
+    <h2 id="coverTitle">该起身活动了</h2>
+    <p class="cover-sub" id="coverSub"></p>
+    <div class="cover-time"><b id="coverTime">05:00</b><span id="coverTimeLabel">活动倒计时</span></div>
+    <div class="cover-tips" id="coverTips"></div>
+    <div class="cover-mic" id="coverMic" hidden></div>
+    <div class="cover-actions">
+      <button type="button" class="main-btn" id="coverOk">我已起身，开始活动</button>
+      <button type="button" class="btn" id="coverSnooze">5 分钟后提醒我</button>
+    </div>
+    <p class="cover-note" id="coverNote"></p>
+  </div>
+</div>
+<script>
+/* ---------------- 常量与文案 ---------------- */
+const SKEY='sitrem_settings_v1', TKEY='sitrem_stats_v1', PKEY='sitrem_phase_v1', WKEY='sitrem_water_v1';
+const RING_LEN=2*Math.PI*62;
+const DEFAULTS={sit:45,rest:5,sound:true,notify:true,vibrate:true,cover:true,popup:false,standOn:true,voice:true,water:true,wgap:60,wgoal:1700,eyeOn:true,egap:45};
+const TIPS=[
+  {t:'走动接水',d:'去接一杯水，绕房间慢走一圈，让下肢血液回流。'},
+  {t:'站立扩胸',d:'十指交扣翻掌向上，向后伸展，打开久驼的胸腔。'},
+  {t:'颈部放松',d:'低头—回正—左右侧倾，各停 5 秒，动作要慢。'},
+  {t:'肩部绕环',d:'双肩向前、向后各绕 10 圈，放松僵硬的斜方肌。'},
+  {t:'靠墙站立',d:'后脑、肩胛、臀部贴墙站 1 分钟，找回直立姿势。'},
+  {t:'自重深蹲',d:'慢慢做 10 次深蹲，唤醒臀腿，别让椅子接管身体。'},
+  {t:'远眺放松',d:'看向 6 米外至少 20 秒，让睫状肌离开屏幕。'},
+  {t:'手腕反压',d:'手臂前伸、掌心向前，另一只手轻压指尖，放松打字的手。'}
+];
+/* ---------------- 提醒定义 ----------------
+   参数各自独立（久坐间隔 / 补水间隔与目标），呈现共用同一套通道。
+   新增提醒类型只需在这里加一项，并在对应位置调 raiseAlert(kind)。 */
+const ALERTS={
+  stand:{
+    eyebrow:'TIME TO STAND',
+    title:'该起身活动了',
+    big:()=>fmtClock(remaining()),
+    bigLabel:'活动倒计时',
+    sub:()=>'已连续坐了 <b>'+cfg.sit+'</b> 分钟，站起来动一动，给身体一分钟。',
+    tips:()=>alertTips.map(t=>'<p><b>'+t.t+'</b> · '+t.d+'</p>').join(''),
+    note:'网页只能拦住这个标签页；起身后顺手接杯温水，回来在补水卡里记一笔。',
+    ok:'我已起身，开始活动',
+    later:'5 分钟后提醒我',
+    say:'该起身活动了，站起来活动一下',
+    notifyTitle:'该起身活动了',
+    notifyBody:()=>'已连续坐了 '+cfg.sit+' 分钟，起来活动 '+cfg.rest+' 分钟'+(cfg.water?'，顺手喝 200 ml 水':'')+'。',
+    popupTitle:'该起身活动了 · 久坐提醒',
+    popupMsg:()=>'已连续坐了 '+cfg.sit+' 分钟，站起来动一动。<br>主页面已进入活动倒计时。',
+    popupOk:'我已起身',
+    banner:()=>'该起身活动了：已连续坐了 ' + cfg.sit + ' 分钟，起来动一动' + (cfg.water ? '，顺手接杯水' : ''),
+    water:false
+  },
+  water:{
+    eyebrow:'TIME TO DRINK',
+    title:'该喝水了',
+    big:()=>String(water.ml),
+    bigLabel:()=>'今日饮水 ml · 目标 '+cfg.wgoal,
+    sub:()=>'距上次记录已过 '+(water.lastAt?fmtAgo(Date.now()-water.lastAt):'一段时间')+'，小口慢饮 150–200 ml，别等口渴。',
+    tips:()=>'<p><b>一杯约 200 ml</b> · 一次性纸杯八分满，小口分几次喝完</p><p><b>别一次灌太多</b> · 分散到一天，肾脏负担更小</p>',
+    note:'白水或淡茶优先，不用含糖饮料代替；点上面的按钮会把这一杯记进去。',
+    ok:'喝了 200 ml',
+    later:'10 分钟后提醒',
+    say:'该喝水了，小口慢饮两百毫升',
+    notifyTitle:'该喝水了',
+    notifyBody:()=>'已 '+cfg.wgap+' 分钟未补水，小口喝 150–200 ml，别等口渴。',
+    popupTitle:'该喝水了 · 补水提醒',
+    popupMsg:()=>'距上次补水已有一段时间，小口慢饮 150–200 ml。<br>主页面可直接记录这一杯。',
+    popupOk:'知道了',
+    banner:()=>'该喝水了：小口慢饮 150–200 ml，白水或淡茶更合适',
+    water:true
+  },
+  eye:{
+    eyebrow:'LOOK FAR AWAY',
+    title:'该让眼睛歇一下',
+    big:()=>String(stats.eyes || 0),
+    bigLabel:'今日护眼次数 · 看 6 米外 20 秒',
+    sub:()=>'已连续用眼约 <b>' + cfg.egap + '</b> 分钟，把视线从屏幕上移开，看向 6 米外的固定目标 20 秒。',
+    tips:()=>'<p><b>20-20-20</b> · 每 20 分钟，看 20 英尺（约 6 米）外 20 秒，让睫状肌松开</p><p><b>顺便多眨眼</b> · 专注时眨眼频率会掉一半，远眺时把眼睛眨湿</p>',
+    note:'远眺时别顺手拿起手机，那等于换一块屏幕继续看。',
+    ok:'已远眺 20 秒',
+    later:'10 分钟后提醒',
+    say:'眼睛该休息了，看向六米外二十秒',
+    notifyTitle:'该让眼睛休息了',
+    notifyBody:()=>'已连续用眼 ' + cfg.egap + ' 分钟，看向 6 米外 20 秒。',
+    popupTitle:'该让眼睛休息了 · 护眼提醒',
+    popupMsg:()=>'看屏幕已有一段时间，<br>把视线移到 6 米外，停 20 秒。',
+    popupOk:'知道了',
+    banner:()=>'该让眼睛歇一下：看向 6 米外 20 秒，顺便眨眨眼',
+    water:false
+  }
+};
+/* 30 秒微运动：起身提醒时随机给一个，点了才开始计时，随时可提前结束 */
+const MICRO=[
+  {t:'靠墙站立',d:'后脑、肩胛、臀部贴墙，收紧腹部'},
+  {t:'自重深蹲',d:'慢慢蹲起 10 次，膝盖对着脚尖'},
+  {t:'窗前远眺',d:'看向 6 米外，顺手活动脖颈'},
+  {t:'扩胸伸展',d:'十指交扣翻掌向上，向后伸展'},
+  {t:'肩颈绕环',d:'双肩前后各绕 10 圈，再左右转头'},
+  {t:'提踵走动',d:'踮脚走 20 步，把小腿泵起来'}
+];
+const MIC_SEC = 30;
+const val = v => typeof v === 'function' ? v() : v;
+const UA = navigator.userAgent;
+const IS_IOS = /iP(hone|ad|od)/.test(UA) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+const IS_MOBILE = IS_IOS || /Android|Mobile|Windows Phone/i.test(UA);
+const IS_FILE = location.protocol === 'file:';
+const NOTIFY_OK = 'Notification' in window && !IS_FILE && !IS_IOS;
+const VIBRATE_OK = 'vibrate' in navigator && !IS_IOS;
+const SW_OK = 'serviceWorker' in navigator && !IS_FILE;
+const POPUP_OK = !IS_IOS;
+
+/* ---------------- 工具 ---------------- */
+const $ = id => document.getElementById(id);
+const pad = n => String(n).padStart(2,'0');
+const todayKey = () => { const d = new Date(); return d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()); };
+const clampInt = (v, min, max, fb) => { const n = Math.round(Number(v)); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) : fb; };
+/* 空闲时执行：requestIdleCallback 优先，setTimeout 兜底，保证一定能跑 */
+const whenIdle = fn => {
+  let done = false;
+  const run = () => { if(done) return; done = true; fn(); };
+  if('requestIdleCallback' in window){ try{ requestIdleCallback(run, {timeout: 2000}); }catch(e){} }
+  setTimeout(run, 1500);
+};
+function fmtClock(ms){
+  const s = Math.max(0, Math.ceil(ms/1000));
+  const h = Math.floor(s/3600), m = Math.floor(s%3600/60), r = s%60;
+  return h ? h + ':' + pad(m) + ':' + pad(r) : pad(m) + ':' + pad(r);
+}
+
+/* ---------------- 状态 ---------------- */
+let cfg = {...DEFAULTS};
+let stats = {date:todayKey(), stands:0, sitSec:0, restSec:0, eyes:0};
+let mode = 'idle';        // idle | sitting | resting | paused
+let pausedFrom = 'sitting';
+let endAt = 0, phaseLen = 0, pausedRemain = 0;
+let lastTick = 0, saveAcc = 0, bannerTimer = 0, audioCtx = null, buzzTimer = 0, buzzStopAt = 0, chimeTimer = 0, chimeStopAt = 0, coverOpen = false, bannerActionFn = null;
+let attentionOn = false, attentionTimer = 0, attentionStopTimer = 0, attentionText = '', faviconEl = null, iconA = '', iconB = '', wakeLock = null, swReg = null, popupWarned = false, lockY = 0;
+/* 统一提醒引擎：同一时刻只有一个提醒在场，其余排队；所有通道由它统一驱动 */
+let activeAlert = '', alertStartedAt = 0, alertNudgeTimer = 0, alertPreview = false, alertQueue = [], alertTips = [];
+let speechOk = 'speechSynthesis' in window;
+/* 补水状态：water 为今日记录，waterDueAt 为下次提醒时间戳 */
+let water = {date:todayKey(), ml:0, cups:0, lastAt:0};
+let waterDueAt = 0, waterRetry = 0, waterHotUntil = 0;
+/* 饮水撤销栈：每记一杯压一层，误点几杯就能退几步，最多保留 30 层 */
+let waterHist = [];
+/* 护眼：独立周期，与补水一样的滚动计时 */
+let eyeDueAt = 0, eyeRetry = 0;
+/* 提醒节流：上一次提醒结束时间（3 分钟冷却）；alertMerged 记录本次合并进来的提醒 */
+let lastAlertEndAt = 0, alertMerged = [];
+/* 30 秒微运动：当前动作卡与倒计时截至时间 */
+let micAction = null, micUntil = 0, micNotified = false;
+
+/* ---------------- 存储 ---------------- */
+function loadCfg(){
+  try{
+    const d = JSON.parse(localStorage.getItem(SKEY) || 'null');
+    if(d && typeof d === 'object'){
+      cfg.sit = clampInt(d.sit, 1, 180, DEFAULTS.sit);
+      cfg.rest = clampInt(d.rest, 1, 30, DEFAULTS.rest);
+      cfg.sound = d.sound !== false;
+      cfg.notify = d.notify !== false;
+      cfg.vibrate = d.vibrate !== false;
+      cfg.cover = d.cover !== false;
+      cfg.popup = d.popup === true;
+      cfg.standOn = d.standOn !== false;
+      cfg.voice = d.voice !== false;
+      cfg.water = d.water !== false;
+      cfg.wgap = clampInt(d.wgap, 15, 180, DEFAULTS.wgap);
+      cfg.wgoal = clampInt(d.wgoal, 800, 4000, DEFAULTS.wgoal);
+      cfg.eyeOn = d.eyeOn !== false;
+      cfg.egap = clampInt(d.egap, 5, 120, DEFAULTS.egap);
+    }
+  }catch(e){}
+}
+function saveCfg(){ try{ localStorage.setItem(SKEY, JSON.stringify(cfg)); }catch(e){} }
+function loadStats(){
+  try{
+    const d = JSON.parse(localStorage.getItem(TKEY) || 'null');
+    if(d && typeof d === 'object' && d.date === todayKey()){
+      stats = {date:d.date, stands:Math.max(0, Math.round(d.stands)||0), sitSec:Math.max(0, Number(d.sitSec)||0), restSec:Math.max(0, Number(d.restSec)||0), eyes:Math.max(0, Math.round(d.eyes)||0)};
+    }
+  }catch(e){}
+}
+function saveStats(){ try{ localStorage.setItem(TKEY, JSON.stringify(stats)); }catch(e){} }
+function loadWater(){
+  try{
+    const d = JSON.parse(localStorage.getItem(WKEY) || 'null');
+    if(d && typeof d === 'object' && d.date === todayKey()){
+      water = {date:d.date, ml:Math.max(0, Math.min(6000, Math.round(d.ml)||0)), cups:Math.max(0, Math.round(d.cups)||0), lastAt:Number(d.lastAt)||0};
+    }
+  }catch(e){}
+}
+function saveWater(){ try{ localStorage.setItem(WKEY, JSON.stringify(water)); }catch(e){} }
+function resetWaterDay(){
+  water = {date:todayKey(), ml:0, cups:0, lastAt:0};
+  waterHist.length = 0; waterDueAt = 0; waterRetry = 0; waterHotUntil = 0;
+  saveWater();
+}
+function savePhase(){
+  try{
+    if(mode === 'idle'){ sessionStorage.removeItem(PKEY); return; }
+    sessionStorage.setItem(PKEY, JSON.stringify({mode, pausedFrom, endAt, phaseLen, pausedRemain, savedAt:Date.now()}));
+  }catch(e){}
+}
+function restorePhase(){
+  let d = null;
+  try{ d = JSON.parse(sessionStorage.getItem(PKEY) || 'null'); }catch(e){}
+  if(!d || typeof d !== 'object') return;
+  if(Date.now() - (d.savedAt || 0) > 600000) return;   // 10 分钟前的会话不恢复
+  const pl = Math.min(10800000, Math.max(60000, Number(d.phaseLen) || cfg.sit*60000));
+  if(d.mode === 'sitting' || d.mode === 'resting'){
+    if(Date.now() < d.endAt + 300000){ mode = d.mode; endAt = d.endAt; phaseLen = pl; }
+  }else if(d.mode === 'paused' && d.pausedRemain > 0){
+    mode = 'paused'; pausedFrom = d.pausedFrom === 'resting' ? 'resting' : 'sitting';
+    pausedRemain = Math.min(10800000, d.pausedRemain); phaseLen = pl;
+  }
+}
+
+/* ---------------- 声音与通知 ---------------- */
+function ensureAudio(){
+  try{
+    if('audioSession' in navigator){ try{ navigator.audioSession.type = 'playback'; }catch(e){} }
+    if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if(audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  }catch(e){ audioCtx = null; }
+}
+function chime(kind){
+  if(!cfg.sound) return;
+  ensureAudio();
+  if(!audioCtx) return;
+  const t0 = audioCtx.currentTime + 0.02;
+  const notes = kind === 'back' ? [659.25, 523.25] : [880, 1174.66];
+  notes.forEach((f, i) => {
+    const o = audioCtx.createOscillator(), g = audioCtx.createGain();
+    o.type = 'sine'; o.frequency.value = f;
+    const t = t0 + i*0.24;
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.26, t + 0.04);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.6);
+    o.connect(g); g.connect(audioCtx.destination);
+    o.start(t); o.stop(t + 0.65);
+  });
+}
+function notify(title, body){
+  if(!cfg.notify || !NOTIFY_OK || Notification.permission !== 'granted') return;
+  const opts = {body, tag:'sitrem', renotify:true, requireInteraction:true, vibrate:[700,500,700,500,700]};
+  const fallback = () => {
+    try{
+      const n = new Notification(title, opts);
+      n.onclick = () => { try{ window.focus(); n.close(); }catch(e){} };
+    }catch(e){}
+  };
+  /* Android Chrome 必须经 Service Worker 显示通知 */
+  if(swReg && swReg.showNotification){
+    swReg.showNotification(title, opts).catch(fallback);
+  }else if(SW_OK){
+    navigator.serviceWorker.getRegistration().then(reg => {
+      if(reg){ swReg = reg; reg.showNotification(title, opts).catch(fallback); }
+      else fallback();
+    }).catch(fallback);
+  }else{
+    fallback();
+  }
+}
+/* 振动：手机端到点后循环长震，用户响应或 60 秒后停止 */
+function stopBuzz(){
+  if(buzzTimer){ clearInterval(buzzTimer); buzzTimer = 0; }
+  if(VIBRATE_OK){ try{ navigator.vibrate(0); }catch(e){} }
+}
+function buzzLong(){
+  if(!cfg.vibrate || !VIBRATE_OK) return;
+  stopBuzz();
+  buzzStopAt = Date.now() + 90000;
+  const fire = () => {
+    if(Date.now() >= buzzStopAt){ stopBuzz(); return; }
+    try{ navigator.vibrate([700, 500]); }catch(e){}
+  };
+  fire();
+  buzzTimer = setInterval(fire, 1200);
+}
+function buzzShort(){
+  if(!cfg.vibrate || !VIBRATE_OK) return;
+  stopBuzz();
+  try{ navigator.vibrate([220, 120, 220]); }catch(e){}
+}
+/* 声音：到点后循环播放提示音，用户响应或 60 秒后停止 */
+function startChimeLoop(){
+  if(!cfg.sound) return;
+  stopChimeLoop();
+  chimeStopAt = Date.now() + 90000;
+  const fire = () => {
+    if(Date.now() >= chimeStopAt){ stopChimeLoop(); return; }
+    chime('rest');
+  };
+  fire();
+  chimeTimer = setInterval(fire, 1000);
+}
+function stopChimeLoop(){
+  if(chimeTimer){ clearInterval(chimeTimer); chimeTimer = 0; }
+}
+function stopAlertChannels(){
+  stopBuzz(); stopChimeLoop();
+  if(alertNudgeTimer){ clearTimeout(alertNudgeTimer); alertNudgeTimer = 0; }
+  stopAttention(); cancelSpeech();
+}
+/* 语音播报：用系统 TTS 念出提醒，不支持或未授权时静默降级 */
+function speak(text){
+  if(!cfg.voice || !speechOk) return;
+  try{
+    speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'zh-CN'; u.rate = 0.95; u.pitch = 1; u.volume = 1;
+    speechSynthesis.speak(u);
+  }catch(e){ speechOk = false; }
+}
+function cancelSpeech(){
+  if(!speechOk) return;
+  try{ speechSynthesis.cancel(); }catch(e){}
+}
+function showBanner(text, kind, ms, action){
+  const b = $('banner'), act = $('bannerAction');
+  $('bannerText').textContent = text;
+  if(action && action.label && act){
+    act.hidden = false;
+    act.textContent = action.label;
+    bannerActionFn = action.fn || null;
+  }else if(act){
+    act.hidden = true;
+    bannerActionFn = null;
+  }
+  b.classList.toggle('back', kind === 'back');
+  b.classList.add('show');
+  clearTimeout(bannerTimer);
+  bannerTimer = setTimeout(() => b.classList.remove('show'), ms || 6000);
+}
+/* ---------------- 统一提醒引擎 ----------------
+   久坐 / 补水 / 护眼各自决定“何时提醒”，但一旦提醒，就走下面这条完全相同的链路：
+   循环提示音 + 长震动 + 系统通知 + 语音播报 + 标题图标闪烁 + 横幅 + 独立弹窗 + 全屏遮罩。
+   同一时刻只允许一个提醒在场，其余排队；刚结束 3 分钟内不连发，5 分钟内到期的其他提醒合并成一次。 */
+/* 节流：刚结束一次提醒的冷却期内不再开新的，避免三类提醒轮番轰炸 */
+const ALERT_COOL = 180000;
+function alertBlocked(kind, now){
+  if(lastAlertEndAt && now - lastAlertEndAt < ALERT_COOL) return lastAlertEndAt + ALERT_COOL;
+  /* 久坐到点前 3 分钟内，让起身提醒先上场，其他提醒等它结束后再说 */
+  if(kind !== 'stand' && mode === 'sitting' && cfg.standOn && endAt > now && endAt - now < 180000) return endAt + 60000;
+  return 0;
+}
+/* 合并：另一类提醒若也在 5 分钟内到期，就顺延一整轮，并在本次遮罩里一并提示 */
+function deferOthers(kind, now){
+  const merged = [];
+  if(kind !== 'water' && cfg.water && water.ml < cfg.wgoal && waterDueAt && waterDueAt - now < 300000){
+    waterDueAt = now + cfg.wgap*60000; waterRetry = 0;
+    merged.push('小口喝 200 ml 水');
+  }
+  if(kind !== 'eye' && cfg.eyeOn && eyeDueAt && eyeDueAt - now < 300000){
+    eyeDueAt = now + cfg.egap*60000; eyeRetry = 0;
+    merged.push('看向 6 米外 20 秒');
+  }
+  return merged;
+}
+function raiseAlert(kind, opts){
+  const def = ALERTS[kind];
+  if(!def) return;
+  if(activeAlert === kind){ reinforceAlert(); return; }
+  if(activeAlert){ if(alertQueue.indexOf(kind) < 0) alertQueue.push(kind); return; }
+  activeAlert = kind;
+  alertStartedAt = Date.now();
+  alertPreview = !!(opts && opts.preview);
+  alertMerged = alertPreview ? [] : deferOthers(kind, Date.now());
+  if(opts && opts.tips) alertTips = opts.tips;
+  else if(kind === 'stand') alertTips = TIPS.slice().sort(() => Math.random() - .5).slice(0, 3);
+  ensureAudio();
+  startChimeLoop();
+  buzzLong();
+  notify(def.notifyTitle, val(def.notifyBody));
+  speak(val(def.say));
+  startAttention(kind);
+  showBanner(val(def.banner), '', 15000,
+    kind === 'water' ? {label:'喝了 200 ml', fn:() => logWater(200)} : null);
+  if(cfg.popup) openAlertWindow(kind);
+  if(cfg.cover) showAlertCover(kind);
+  if(alertPreview){
+    /* 测试提醒：40 秒后自动收起（足够走完一次 30 秒微运动），不动计时状态 */
+    setTimeout(() => { if(activeAlert === kind) resolveAlert(kind, 'preview'); }, 40000);
+  }else{
+    scheduleNudge();
+  }
+  render();
+}
+function reinforceAlert(){
+  ensureAudio();
+  chime('rest'); buzzShort();
+  if(activeAlert) speak(val(ALERTS[activeAlert].say));
+}
+/* 未响应升级：声音/震动 90 秒结束后，每 45 秒再提醒一次；5 分钟后自动收起，转稍后再提 */
+function scheduleNudge(){
+  clearTimeout(alertNudgeTimer);
+  alertNudgeTimer = setTimeout(() => {
+    alertNudgeTimer = 0;
+    if(!activeAlert) return;
+    if(Date.now() - alertStartedAt >= 300000){ resolveAlert(activeAlert, 'timeout'); return; }
+    chime('rest');
+    buzzShort();
+    speak(val(ALERTS[activeAlert].say));
+    /* 标题闪烁只持续 90 秒，补提醒时重新拉起，避免无声无光 */
+    if(!attentionOn) startAttention(activeAlert);
+    scheduleNudge();
+  }, 45000);
+}
+function endAlert(){
+  /* 真实提醒结束后记下时间，3 分钟内不再开新的（预览不计入） */
+  if(activeAlert && !alertPreview) lastAlertEndAt = Date.now();
+  activeAlert = '';
+  alertMerged = [];
+  micAction = null; micUntil = 0; micNotified = false;
+  stopAlertChannels();
+  hideCover();
+}
+function resolveAlert(kind, action){
+  if(activeAlert !== kind) return;
+  const preview = alertPreview;
+  endAlert();
+  alertPreview = false;
+  if(!preview){
+    if(kind === 'stand'){
+      if(action === 'later') snoozeStand();
+      else if(action === 'timeout') showBanner('起身提醒已暂时收起，下次到点再提示', '', 6000);
+    }else if(kind === 'water'){
+      if(action === 'primary') logWater(200);
+      else if(action === 'later'){ waterDueAt = Date.now() + 600000; showBanner('好，10 分钟后再提醒你喝水', '', 5000); }
+      else if(action === 'timeout'){ waterDueAt = Date.now() + 300000; showBanner('补水提醒已收起，5 分钟后再提示', '', 6000); }
+    }else if(kind === 'eye'){
+      if(action === 'primary'){ stats.eyes = (stats.eyes || 0) + 1; eyeRetry = 0; saveStats(); }
+      else if(action === 'later'){ eyeDueAt = Date.now() + 600000; showBanner('好，10 分钟后再提醒你护眼', '', 5000); }
+      else if(action === 'timeout'){ eyeDueAt = Date.now() + 300000; showBanner('护眼提醒已收起，5 分钟后再提示', '', 6000); }
+    }
+  }
+  flushQueue();
+  render();
+}
+function flushQueue(){
+  if(!alertQueue.length) return;
+  const next = alertQueue.shift();
+  setTimeout(() => { if(!activeAlert) raiseAlert(next); }, 1200);
+}
+function dismissAlert(){
+  alertPreview = false;
+  alertQueue.length = 0;
+  endAlert();
+  render();
+}
+function snoozeStand(){
+  stats.stands = Math.max(0, stats.stands - 1);
+  saveStats(); paintTips(false);
+  mode = 'sitting'; pausedFrom = 'sitting';
+  phaseLen = 5*60000; endAt = Date.now() + phaseLen;
+  savePhase();
+  showBanner('已推迟：5 分钟后再次提醒', '', 5000);
+}
+/* 全屏遮罩：三类提醒共用，只换文案、主题色与主按钮；起身提醒额外附 30 秒微运动 */
+function showAlertCover(kind){
+  const def = ALERTS[kind], cv = $('cover');
+  cv.classList.remove('kind-stand', 'kind-water', 'kind-eye');
+  cv.classList.add('kind-' + kind);
+  $('coverEyebrow').textContent = def.eyebrow;
+  $('coverTitle').textContent = def.title;
+  $('coverSub').innerHTML = val(def.sub);
+  $('coverTime').textContent = val(def.big);
+  $('coverTimeLabel').textContent = val(def.bigLabel);
+  $('coverTips').innerHTML = val(def.tips);
+  $('coverSnooze').textContent = def.later;
+  const okBtn = $('coverOk'), mic = $('coverMic');
+  okBtn.classList.remove('done');
+  if(kind === 'stand'){
+    micAction = MICRO[Math.floor(Math.random()*MICRO.length)];
+    micUntil = 0; micNotified = false;
+    mic.innerHTML = '<b>' + micAction.t + '</b><span>' + micAction.d + ' · 做 ' + MIC_SEC + ' 秒</span>';
+    mic.hidden = false;
+    okBtn.textContent = '起身，做 ' + MIC_SEC + ' 秒';
+  }else{
+    micAction = null; micUntil = 0;
+    mic.hidden = true;
+    okBtn.textContent = def.ok;
+  }
+  $('coverNote').textContent = def.note + (alertMerged.length ? ' 这次一并提醒：' + alertMerged.join('、') + '。' : '');
+  /* iOS 上仅靠 overflow:hidden 锁不住页面，改为固定 body 并记住滚动位置 */
+  lockY = window.pageYOffset || document.documentElement.scrollTop || 0;
+  document.body.style.top = (-lockY) + 'px';
+  document.body.classList.add('locked');
+  cv.classList.add('open');
+  coverOpen = true;
+  $('coverOk').focus();
+}
+/* 主按钮的两段式：第一次点开始 30 秒动作，倒计时结束或再点一次才结束提醒 */
+function renderMic(){
+  if(activeAlert !== 'stand' || !micAction) return;
+  const ok = $('coverOk');
+  if(!micUntil){ ok.classList.remove('done'); setText(ok, '起身，做 ' + MIC_SEC + ' 秒'); return; }
+  const left = Math.ceil((micUntil - Date.now())/1000);
+  if(left > 0){
+    ok.classList.remove('done');
+    setText(ok, micAction.t + ' · ' + left + ' 秒 · 点此提前结束');
+  }else{
+    ok.classList.add('done');
+    setText(ok, '完成，开始活动');
+    if(!micNotified){ micNotified = true; chime('back'); buzzShort(); }
+  }
+}
+function hideCover(){
+  if(!coverOpen) return;
+  $('cover').classList.remove('open');
+  document.body.classList.remove('locked');
+  document.body.style.top = '';
+  if(lockY){ try{ window.scrollTo(0, lockY); }catch(e){} lockY = 0; }
+  coverOpen = false;
+}
+
+/* ---------------- 补水 ---------------- */
+function fmtAgo(ms){
+  const m = Math.floor(ms/60000);
+  if(m < 1) return '刚刚';
+  if(m < 60) return m + ' 分钟前';
+  return Math.floor(m/60) + ' 小时 ' + (m%60) + ' 分前';
+}
+function planWater(minutes){
+  if(!cfg.water || water.ml >= cfg.wgoal){ waterDueAt = 0; return; }
+  waterDueAt = Date.now() + Math.max(1, minutes || cfg.wgap) * 60000;
+}
+function renderWater(){
+  const goal = cfg.wgoal, ml = water.ml;
+  const fill = $('waterFill'), bar = $('waterBar');
+  setText($('waterMl'), String(ml));
+  setText($('waterGoalText'), String(goal));
+  const left = goal - ml;
+  setText($('waterLeft'), left > 0 ? '还差 ' + left + ' ml' : '今日已达标，保持小口慢饮');
+  fill.style.width = (goal > 0 ? Math.min(100, ml/goal*100) : 0).toFixed(1) + '%';
+  if(bar && bar.setAttribute){ bar.setAttribute('aria-valuenow', String(ml)); bar.setAttribute('aria-valuemax', String(goal)); }
+  setText($('waterMeta'), '今日 ' + water.cups + ' 杯 · ' + (water.lastAt ? '上次 ' + fmtAgo(Date.now() - water.lastAt) : '尚未记录'));
+  let next;
+  if(!cfg.water) next = '喝水提醒已关闭';
+  else if(ml >= goal) next = '今日目标已完成';
+  else if(mode === 'idle') next = '开始计时后提醒';
+  else if(mode === 'paused') next = '计时暂停中';
+  else if(waterDueAt) next = '下次 ' + fmtClock(Math.max(0, waterDueAt - Date.now()));
+  else next = '下次提醒 —';
+  setText($('waterNext'), next);
+  $('waterPanel').classList.toggle('due', Date.now() < waterHotUntil);
+  const undoBtn = $('waterUndo');
+  undoBtn.disabled = waterHist.length === 0;
+  setText(undoBtn, waterHist.length > 1 ? '撤销上一杯 · ' + waterHist.length + ' 步' : '撤销上一杯');
+  $('waterSwitch').checked = cfg.water;
+}
+function markWaterChips(){
+  document.querySelectorAll('[data-wgap]').forEach(b => b.classList.toggle('on', Number(b.dataset.wgap) === cfg.wgap));
+  document.querySelectorAll('[data-wgoal]').forEach(b => b.classList.toggle('on', Number(b.dataset.wgoal) === cfg.wgoal));
+}
+function fireWater(){
+  const now = Date.now();
+  if(!cfg.water || water.ml >= cfg.wgoal){ waterDueAt = 0; return; }
+  if(mode !== 'sitting' && mode !== 'resting') return;
+  /* 另一类提醒正在场时顺延 1 分钟，避免两套提醒互相覆盖 */
+  if(activeAlert){ waterDueAt = now + 60000; return; }
+  const waitTo = alertBlocked('water', now);
+  if(waitTo){ waterDueAt = waitTo; return; }
+  waterRetry++;
+  waterHotUntil = now + 120000;
+  raiseAlert('water');
+  /* 未响应时每 5 分钟再说一次，连续 3 次后回到正常间隔 */
+  waterDueAt = now + (waterRetry >= 3 ? cfg.wgap : 5) * 60000;
+  if(waterRetry >= 3) waterRetry = 0;
+}
+function logWater(amount){
+  const ml = clampInt(amount, 50, 1000, 200);
+  ensureAudio();
+  waterHist.push({ml: water.ml, cups: water.cups, lastAt: water.lastAt});
+  if(waterHist.length > 30) waterHist.shift();
+  water.ml = Math.min(6000, water.ml + ml);
+  water.cups += 1;
+  water.lastAt = Date.now();
+  waterRetry = 0; waterHotUntil = 0;
+  if(activeAlert === 'water'){ endAlert(); flushQueue(); }
+  saveWater();
+  planWater(cfg.wgap);
+  if(water.ml >= cfg.wgoal){
+    chime('back');
+    showBanner('今日饮水已达标：' + water.ml + ' ml，继续保持小口慢饮', 'back', 6000);
+  }else{
+    showBanner('已记录 ' + ml + ' ml · 今日 ' + water.ml + ' / ' + cfg.wgoal + ' ml', 'back', 3500);
+  }
+  render();
+}
+function undoWater(){
+  const prev = waterHist.pop();
+  if(!prev) return;
+  water.ml = prev.ml; water.cups = prev.cups; water.lastAt = prev.lastAt;
+  saveWater();
+  planWater(cfg.wgap);
+  showBanner('已撤销上一杯，今日 ' + water.ml + ' ml' + (waterHist.length ? '（还能再撤 ' + waterHist.length + ' 步）' : ''), '', 4000);
+  render();
+}
+
+/* ---------------- 护眼 ---------------- */
+function planEye(minutes){
+  if(!cfg.eyeOn){ eyeDueAt = 0; return; }
+  eyeDueAt = Date.now() + Math.max(1, minutes || cfg.egap) * 60000;
+}
+function fireEye(){
+  const now = Date.now();
+  if(!cfg.eyeOn) return;
+  if(mode !== 'sitting' && mode !== 'resting') return;
+  if(activeAlert){ eyeDueAt = now + 60000; return; }
+  const waitTo = alertBlocked('eye', now);
+  if(waitTo){ eyeDueAt = waitTo; return; }
+  eyeRetry++;
+  /* 未响应时 10 分钟后再提，连续 3 次后回到正常间隔 */
+  eyeDueAt = now + (eyeRetry >= 3 ? cfg.egap : 10) * 60000;
+  if(eyeRetry >= 3) eyeRetry = 0;
+  raiseAlert('eye');
+}
+function markEyeQuick(){
+  document.querySelectorAll('[data-egap]').forEach(b => b.classList.toggle('on', Number(b.dataset.egap) === cfg.egap));
+}
+
+/* ---------------- 数据管理 ---------------- */
+/* 两段式确认：第一次点只是上膛，3 秒内再点一次才执行，避免清数据也误触 */
+function armConfirm(btn, run){
+  if(btn.dataset.arm === '1'){
+    if(btn._t){ clearTimeout(btn._t); btn._t = 0; }
+    btn.dataset.arm = '';
+    btn.classList.remove('arm');
+    btn.textContent = btn.dataset.label;
+    run();
+    return;
+  }
+  btn.dataset.label = btn.textContent;
+  btn.dataset.arm = '1';
+  btn.classList.add('arm');
+  btn.textContent = '再点一次确认';
+  btn._t = setTimeout(() => {
+    if(btn.dataset.arm !== '1') return;
+    btn.dataset.arm = '';
+    btn.classList.remove('arm');
+    btn.textContent = btn.dataset.label;
+  }, 3000);
+}
+function renderDataNotes(){
+  setText($('dataWaterNote'), water.ml + ' ml · ' + water.cups + ' 杯');
+  setText($('dataStatsNote'), '起身 ' + stats.stands + ' 次 · 久坐 ' + Math.round(stats.sitSec/60) + ' 分 · 护眼 ' + (stats.eyes || 0) + ' 次');
+}
+function clearWaterData(){
+  resetWaterDay();
+  if(activeAlert === 'water'){ endAlert(); flushQueue(); }
+  if((mode === 'sitting' || mode === 'resting') && cfg.water) planWater(cfg.wgap);
+  showBanner('今日饮水记录已清零，提醒重新按间隔计算', '', 5000);
+  render();
+}
+function clearStatsData(){
+  stats = {date:todayKey(), stands:0, sitSec:0, restSec:0, eyes:0};
+  saveStats();
+  showBanner('今日统计已清零，设置、饮水与提醒不受影响', '', 5000);
+  render();
+}
+function clearAllData(){
+  try{ localStorage.removeItem(SKEY); localStorage.removeItem(TKEY); localStorage.removeItem(WKEY); }catch(e){}
+  try{ sessionStorage.removeItem(PKEY); }catch(e){}
+  stopAlertChannels(); releaseWakeLock();
+  location.reload();
+}
+
+/* 注意力强化：提醒期间标签标题与图标交替闪烁 */
+function makeFavicon(fill){
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.beginPath(); g.arc(32, 32, 27, 0, Math.PI*2);
+  g.fillStyle = fill; g.fill();
+  return c.toDataURL('image/png');
+}
+function startAttention(kind){
+  if(attentionOn) return;
+  attentionOn = true;
+  attentionText = (ALERTS[kind] && ALERTS[kind].title) || '该起身活动了';
+  if(!iconA){ iconA = makeFavicon('#e4b83e'); iconB = makeFavicon('#ff5f4a'); }
+  if(!faviconEl){ faviconEl = document.createElement('link'); faviconEl.rel = 'icon'; document.head.appendChild(faviconEl); }
+  let flip = false;
+  const step = () => {
+    flip = !flip;
+    document.title = flip ? '● ' + attentionText : '○ ' + attentionText;
+    try{ faviconEl.href = flip ? iconB : iconA; }catch(e){}
+  };
+  step();
+  attentionTimer = setInterval(step, 800);
+  attentionStopTimer = setTimeout(stopAttention, 90000);
+}
+function stopAttention(){
+  if(!attentionOn) return;
+  attentionOn = false;
+  if(attentionTimer){ clearInterval(attentionTimer); attentionTimer = 0; }
+  if(attentionStopTimer){ clearTimeout(attentionStopTimer); attentionStopTimer = 0; }
+  if(faviconEl){ try{ faviconEl.remove(); }catch(e){} faviconEl = null; }
+  render();
+}
+
+/* 屏幕常亮：页面可见时申请 Wake Lock，降低锁屏漏提醒的概率 */
+async function acquireWakeLock(){
+  if(!('wakeLock' in navigator) || document.hidden || wakeLock) return;
+  try{
+    const wl = await navigator.wakeLock.request('screen');
+    wakeLock = wl;
+    wl.addEventListener('release', () => { if(wakeLock === wl) wakeLock = null; });
+  }catch(e){ wakeLock = null; }
+}
+function releaseWakeLock(){
+  if(!wakeLock) return;
+  try{ wakeLock.release().catch(()=>{}); }catch(e){}
+  wakeLock = null;
+}
+
+/* 到点弹出独立提醒小窗（需允许本站弹窗，焦点仍由浏览器决定） */
+function writeAlertWindow(w, kind, msg){
+  try{
+    const def = ALERTS[kind] || ALERTS.stand;
+    const body = msg || val(def.popupMsg);
+    const TONES = {
+      stand:{ring:'#8fdcaf', glow:'rgba(143,220,175,.45)', btn:'linear-gradient(135deg,#8fdcaf,#4a9e6e 58%,#3f8f63)', fg:'#0b1a10'},
+      water:{ring:'#7dd3e0', glow:'rgba(125,211,224,.45)', btn:'linear-gradient(135deg,#a6e8f2,#4aa8b8 58%,#3d94a2)', fg:'#062024'},
+      eye:{ring:'#b9a6ff', glow:'rgba(185,166,255,.45)', btn:'linear-gradient(135deg,#d3c7ff,#8070dd 58%,#6d5cc4)', fg:'#100c24'}
+    };
+    const tone = TONES[kind] || TONES.stand;
+    const html = '<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><title>' + def.popupTitle + '</title>' +
+      '<style>html,body{height:100%}body{margin:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;background:#0b0b0d;color:#ece9e1;font-family:-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;text-align:center;padding:20px;box-sizing:border-box}' +
+      '.dot{width:54px;height:54px;border-radius:50%;border:3px solid ' + tone.ring + ';animation:pulse 1.2s ease-in-out infinite}' +
+      '@keyframes pulse{0%,100%{box-shadow:0 0 0 0 ' + tone.glow + '}50%{box-shadow:0 0 0 18px rgba(0,0,0,0)}}' +
+      'h1{font-size:22px;letter-spacing:.12em;margin:0}' +
+      'p{font-size:13px;color:#a29e93;line-height:1.7;margin:0}' +
+      'button{margin-top:6px;padding:11px 22px;border:0;border-radius:10px;background:' + tone.btn + ';color:' + tone.fg + ';font-size:15px;font-weight:700;letter-spacing:.1em;cursor:pointer}' +
+      '</style></head><body><div class="dot"></div><h1>' + def.title + '</h1><p>' + body + '</p>' +
+      '<button onclick="window.close()">' + def.popupOk + '</button></body></html>';
+    w.document.open(); w.document.write(html); w.document.close();
+    w.focus();
+  }catch(e){}
+}
+function openAlertWindow(kind){
+  if(!cfg.popup) return;
+  let w = null;
+  try{ w = window.open('', 'sitrem_alert', 'width=380,height=460'); }catch(e){ return; }
+  if(!w){
+    if(!popupWarned){
+      popupWarned = true;
+      showBanner('提醒窗被浏览器拦截：请允许本站弹窗，或依赖通知与遮罩', '', 8000);
+    }
+    return;
+  }
+  writeAlertWindow(w, kind);
+}
+
+/* ---------------- 状态机 ---------------- */
+function beginSitting(){
+  mode = 'sitting'; pausedFrom = 'sitting';
+  phaseLen = Math.max(1, cfg.sit) * 60000;
+  endAt = Date.now() + phaseLen;
+  pausedRemain = 0;
+  acquireWakeLock();
+  if(cfg.water && water.ml < cfg.wgoal && !waterDueAt) planWater(cfg.wgap);
+  if(cfg.eyeOn && !eyeDueAt) planEye(cfg.egap);
+  savePhase(); render();
+}
+function beginResting(auto){
+  mode = 'resting'; pausedFrom = 'resting';
+  phaseLen = Math.max(1, cfg.rest) * 60000;
+  endAt = Date.now() + phaseLen;
+  pausedRemain = 0;
+  stats.stands++;
+  saveStats();
+  const picked = paintTips(true);
+  alertTips = picked;
+  if(cfg.water && waterDueAt && waterDueAt - Date.now() < 180000){
+    waterDueAt = Date.now() + 180000;   // 起身提醒优先，喝水稍后再提示
+  }
+  if(auto){
+    raiseAlert('stand', {tips: picked});
+  }else{
+    chime('rest');
+    showBanner('提前起身，记你一次；休息 ' + cfg.rest + ' 分钟');
+  }
+  savePhase(); render();
+}
+function finishRest(manual){
+  dismissAlert();
+  buzzShort();
+  chime('back');
+  if(!manual){
+    notify('活动结束', '活动得不错，开始下一轮专注吧。');
+    showBanner('活动结束：开始下一轮专注', 'back');
+  }
+  paintTips(false);
+  beginSitting();
+}
+function pauseTimer(){
+  if(mode !== 'sitting' && mode !== 'resting') return;
+  pausedFrom = mode;
+  pausedRemain = Math.max(0, endAt - Date.now());
+  mode = 'paused';
+  savePhase(); render();
+}
+function resumeTimer(){
+  if(mode !== 'paused') return;
+  mode = pausedFrom;
+  endAt = Date.now() + pausedRemain;
+  if(cfg.water && waterDueAt && waterDueAt < Date.now()) waterDueAt = Date.now() + 60000;
+  savePhase(); render();
+}
+function resetAll(){
+  mode = 'idle'; pausedFrom = 'sitting'; pausedRemain = 0;
+  phaseLen = cfg.sit * 60000; endAt = 0;
+  waterDueAt = 0; waterRetry = 0; waterHotUntil = 0;
+  eyeDueAt = 0; eyeRetry = 0;
+  dismissAlert(); releaseWakeLock(); paintTips(false); savePhase(); render();
+}
+
+/* ---------------- 渲染 ---------------- */
+function remaining(){
+  if(mode === 'sitting' || mode === 'resting') return Math.max(0, endAt - Date.now());
+  if(mode === 'paused') return pausedRemain;
+  return cfg.sit * 60000;
+}
+const setText = (el, txt) => { if(el.textContent !== txt) el.textContent = txt; };
+let lastNote = '';
+function render(){
+  const total = mode === 'idle' ? cfg.sit*60000 : (phaseLen || cfg.sit*60000);
+  const remain = remaining();
+  const p = total > 0 ? Math.min(1, remain/total) : 0;
+  $('ringProg').style.strokeDashoffset = (RING_LEN * (1-p)).toFixed(2);
+  setText($('timeText'), fmtClock(remain));
+  const card = $('timerCard');
+  const cls = 'timer-card' + (mode === 'resting' ? ' resting' : mode === 'paused' ? ' paused' : '');
+  if(card.className !== cls) card.className = cls;
+  setText($('stateText'), mode === 'idle' ? '准备开始' : mode === 'sitting' ? '久坐计时中' : mode === 'resting' ? '活动时间' : '已暂停');
+  const note = $('sessionNote');
+  let html;
+  if(mode === 'idle') html = cfg.standOn
+    ? '点击开始，专注时把计时交给页面。每 <b>' + cfg.sit + ' 分钟</b>提醒起身活动 <b>' + cfg.rest + ' 分钟</b>' + (cfg.water ? '，每 <b>' + cfg.wgap + ' 分钟</b>提醒喝水' : '') + (cfg.eyeOn ? '，每 <b>' + cfg.egap + ' 分钟</b>提醒远眺' : '') + '。'
+    : '久坐提醒已关闭，计时会按 <b>' + cfg.sit + ' 分钟</b>滚动但不弹提醒' + (cfg.water ? '；喝水提醒仍生效' : '') + (cfg.eyeOn ? '；护眼提醒仍生效' : '') + '。';
+  else if(mode === 'sitting') html = (cfg.standOn ? '坐满后提醒起身' : '久坐提醒已关闭，仅计时') + (cfg.water ? '；到点提醒小口补水' : '') + (cfg.eyeOn ? '；到点提醒远眺' : '') + (cfg.standOn ? '，记得真的站起来。' : '。');
+  else if(mode === 'resting') html = '离开椅子活动一下，本段活动结束后自动开始下一轮。';
+  else html = '计时已暂停，点「继续计时」回到刚才的进度。';
+  if(lastNote !== html){ lastNote = html; note.innerHTML = html; }
+  if(!attentionOn) document.title = (mode === 'sitting' || mode === 'resting') ? fmtClock(remain) + ' · 工位伴侣' : '工位伴侣 · 久坐、喝水与护眼';
+  const main = $('mainBtn'), skip = $('skipBtn'), reset = $('resetBtn');
+  main.classList.toggle('resting', mode === 'resting');
+  if(mode === 'idle'){ setText(main,'开始久坐计时'); setText(skip,'跳过本轮'); skip.disabled = true; reset.disabled = true; }
+  else if(mode === 'sitting'){ setText(main,'暂停计时'); setText(skip,'跳过本轮'); skip.disabled = false; reset.disabled = false; }
+  else if(mode === 'resting'){ setText(main,'提前结束休息'); setText(skip,'暂停休息'); skip.disabled = false; reset.disabled = false; }
+  else { setText(main,'继续计时'); setText(skip,'跳过本轮'); skip.disabled = true; reset.disabled = false; }
+  setText($('stStands'), String(stats.stands));
+  setText($('stSit'), Math.round(stats.sitSec/60) + ' 分');
+  setText($('stRest'), Math.round(stats.restSec/60) + ' 分');
+  setText($('stWater'), water.ml + ' ml');
+  if(coverOpen && activeAlert === 'stand') $('coverTime').textContent = fmtClock(remain);
+  renderWater();
+  renderMic();
+  renderDataNotes();
+}
+
+/* ---------------- 计时循环 ---------------- */
+function tick(){
+  const now = Date.now();
+  if(stats.date !== todayKey()){ stats = {date:todayKey(), stands:0, sitSec:0, restSec:0, eyes:0}; saveStats(); }
+  if(water.date !== todayKey()){
+    resetWaterDay();
+    if((mode === 'sitting' || mode === 'resting') && cfg.water) planWater(cfg.wgap);
+  }
+  const dt = lastTick ? Math.min(now - lastTick, 60000) : 0;   // 后台节流时最多补记 1 分钟
+  lastTick = now;
+  if(mode === 'sitting') stats.sitSec += dt/1000;
+  else if(mode === 'resting') stats.restSec += dt/1000;
+  if(mode === 'sitting' && now >= endAt){
+    if(cfg.standOn) beginResting(true);
+    /* 关闭久坐提醒时：静默续一轮，不弹任何提醒 */
+    else { phaseLen = Math.max(1, cfg.sit) * 60000; endAt = now + phaseLen; savePhase(); render(); }
+  }
+  else if(mode === 'resting' && now >= endAt) finishRest(false);
+  else render();
+  if((mode === 'sitting' || mode === 'resting') && cfg.water && waterDueAt && now >= waterDueAt) fireWater();
+  if((mode === 'sitting' || mode === 'resting') && cfg.eyeOn && eyeDueAt && now >= eyeDueAt) fireEye();
+  saveAcc += dt;
+  if(saveAcc >= 10000){ saveAcc = 0; saveStats(); savePhase(); }
+}
+
+/* ---------------- 建议点亮 ---------------- */
+function paintTips(active){
+  const idx = new Set();
+  if(active){ while(idx.size < 3) idx.add(Math.floor(Math.random()*TIPS.length)); }
+  document.querySelectorAll('.tip').forEach((el, i) => el.classList.toggle('hot', idx.has(i)));
+  $('tipNote').textContent = active ? '从这三项里挑一个开始' : '休息时会随机点亮 3 项';
+  return active ? [...idx].map(i => TIPS[i]) : [];
+}
+
+/* ---------------- 设置交互 ---------------- */
+function applyCfg(key, val){
+  cfg[key] = val; saveCfg();
+  if(key === 'sit'){
+    markQuick();
+    if(mode === 'idle') phaseLen = val * 60000;
+  }
+  /* 改护眼间隔时从此刻重新计时，不用等旧周期走完 */
+  if(key === 'eye' && cfg.eyeOn && (mode === 'sitting' || mode === 'resting')) planEye(val);
+  render();
+}
+function markQuick(){ document.querySelectorAll('[data-quick]').forEach(b => b.classList.toggle('on', Number(b.dataset.quick) === cfg.sit)); }
+function syncNotifyRow(){
+  const sw = $('notifySwitch'), note = $('notifyNote');
+  if(IS_IOS){
+    cfg.notify = false; sw.checked = false; sw.disabled = true;
+    note.textContent = 'iOS 普通网页不支持通知（需装成应用并接入推送），由遮罩、声音与标题闪烁代替';
+    return;
+  }
+  if(!NOTIFY_OK){
+    cfg.notify = false; sw.checked = false; sw.disabled = true;
+    note.textContent = IS_FILE ? '本地文件打开不支持通知，请用本地服务器或在线访问' : '当前浏览器不支持网页通知';
+    return;
+  }
+  if(Notification.permission === 'denied'){
+    cfg.notify = false; saveCfg(); sw.checked = false; sw.disabled = true;
+    note.textContent = '通知已被浏览器拦截，需在站点设置中手动允许';
+  }else if(Notification.permission === 'granted'){
+    note.textContent = '已获得通知权限，页面在后台也会弹出提醒';
+  }else{
+    note.textContent = '首次开启时会请求浏览器通知权限';
+  }
+}
+function syncVibrateRow(){
+  const sw = $('vibrateSwitch'), note = $('vibrateNote');
+  if(!VIBRATE_OK){
+    cfg.vibrate = false; sw.checked = false; sw.disabled = true;
+    note.textContent = IS_IOS ? 'iOS 不支持网页震动，Android 手机访问时可用' : '当前浏览器不支持震动，Android 手机浏览器访问时可用';
+    return;
+  }
+  sw.checked = cfg.vibrate;
+  note.textContent = cfg.vibrate ? '到点后持续震动约 90 秒，点按横幅即停' : '打开后手机访问时会震动提醒';
+}
+function syncPopupRow(){
+  const sw = $('popupSwitch'), note = $('popupNote');
+  if(!POPUP_OK){
+    cfg.popup = false; sw.checked = false; sw.disabled = true;
+    note.textContent = 'iOS 不允许网页自动弹出窗口，请使用通知与遮罩提醒';
+    return;
+  }
+  sw.checked = cfg.popup;
+  if(cfg.popup) note.textContent = IS_MOBILE ? '已开启：手机浏览器常拦截无手势弹窗，拦截时回退遮罩' : '已开启：到点会弹出独立提醒窗';
+  else note.textContent = IS_MOBILE ? '手机浏览器多会拦截无手势弹窗，建议用通知与遮罩' : '需允许本站弹窗；浏览器不允许网页强制抢占前台';
+}
+
+function syncVoiceRow(){
+  const sw = $('voiceSwitch'), note = $('voiceNote');
+  if(!speechOk){
+    cfg.voice = false; sw.checked = false; sw.disabled = true;
+    note.textContent = '当前浏览器不支持语音合成，用提示音代替';
+    return;
+  }
+  sw.checked = cfg.voice;
+  note.textContent = cfg.voice ? '到点会念出提醒内容，音色取决于系统语音包' : '打开后会用系统语音念出提醒';
+}
+
+/* ---------------- 事件绑定 ---------------- */
+$('mainBtn').addEventListener('click', () => {
+  ensureAudio(); dismissAlert();
+  if(mode === 'idle'){
+    if(cfg.notify && NOTIFY_OK && Notification.permission === 'default'){
+      Notification.requestPermission().then(() => syncNotifyRow()).catch(()=>{});
+    }
+    beginSitting();
+  }
+  else if(mode === 'sitting') pauseTimer();
+  else if(mode === 'resting') finishRest(true);
+  else if(mode === 'paused') resumeTimer();
+});
+$('skipBtn').addEventListener('click', () => {
+  ensureAudio(); dismissAlert();
+  if(mode === 'sitting') beginResting(false);
+  else if(mode === 'resting') pauseTimer();
+});
+$('resetBtn').addEventListener('click', resetAll);
+$('banner').addEventListener('click', () => { $('banner').classList.remove('show'); bannerActionFn = null; dismissAlert(); });
+$('bannerAction').addEventListener('click', e => {
+  e.stopPropagation();
+  const fn = bannerActionFn;
+  $('banner').classList.remove('show');
+  bannerActionFn = null;
+  dismissAlert();
+  if(fn) fn();
+});
+$('coverOk').addEventListener('click', () => {
+  /* 起身提醒先走 30 秒微运动：第一次点开始计时，之后随时可提前结束 */
+  if(activeAlert === 'stand' && micAction && !micUntil){
+    micUntil = Date.now() + MIC_SEC*1000;
+    micNotified = false;
+    ensureAudio(); chime('back'); buzzShort();
+    renderMic();
+    return;
+  }
+  if(activeAlert) resolveAlert(activeAlert, 'primary'); else hideCover();
+});
+$('coverSnooze').addEventListener('click', () => { if(activeAlert) resolveAlert(activeAlert, 'later'); else hideCover(); });
+document.addEventListener('keydown', e => {
+  if(e.key !== 'Escape' || !coverOpen) return;
+  if(activeAlert) resolveAlert(activeAlert, 'later'); else hideCover();
+});
+
+const STEP_MAX = {sit:180, rest:30, eye:120};
+document.querySelectorAll('.stepper button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const parts = btn.dataset.step.split(':');
+    const key = parts[0], delta = Number(parts[1]);
+    const inp = key === 'sit' ? $('sitInput') : key === 'rest' ? $('restInput') : $('eyeInput');
+    const max = STEP_MAX[key] || 180;
+    const next = clampInt((Number(inp.value) || cfg[key]) + delta, 1, max, cfg[key]);
+    inp.value = next;
+    applyCfg(key, next);
+    if(key === 'eye') markEyeQuick();
+  });
+});
+$('sitInput').addEventListener('change', e => { const v = clampInt(e.target.value, 1, 180, cfg.sit); e.target.value = v; applyCfg('sit', v); });
+$('restInput').addEventListener('change', e => { const v = clampInt(e.target.value, 1, 30, cfg.rest); e.target.value = v; applyCfg('rest', v); });
+$('eyeInput').addEventListener('change', e => { const v = clampInt(e.target.value, 5, 120, cfg.egap); e.target.value = v; applyCfg('eye', v); markEyeQuick(); });
+document.querySelectorAll('[data-quick]').forEach(b => {
+  b.addEventListener('click', () => { const v = Number(b.dataset.quick); $('sitInput').value = v; applyCfg('sit', v); });
+});
+$('soundSwitch').addEventListener('change', e => {
+  cfg.sound = e.target.checked; saveCfg();
+  if(cfg.sound){ ensureAudio(); chime('back'); }
+  else stopChimeLoop();
+});
+$('vibrateSwitch').addEventListener('change', e => {
+  cfg.vibrate = e.target.checked; saveCfg(); syncVibrateRow();
+  if(cfg.vibrate){ try{ navigator.vibrate(180); }catch(err){} }
+  else stopBuzz();
+});
+$('coverSwitch').addEventListener('change', e => { cfg.cover = e.target.checked; saveCfg(); });
+$('popupSwitch').addEventListener('change', e => {
+  if(e.target.checked){
+    let w = null;
+    try{ w = window.open('', 'sitrem_alert', 'width=380,height=460'); }catch(err){}
+    if(!w){
+      e.target.checked = false;
+      $('popupNote').textContent = '弹窗被浏览器拦截：请允许本站的弹出式窗口后重试';
+      return;
+    }
+    writeAlertWindow(w, 'stand', '这是提醒窗预览：到点时会像这样弹出。');
+  }
+  cfg.popup = e.target.checked; saveCfg();
+  syncPopupRow();
+});
+$('notifySwitch').addEventListener('change', async e => {
+  if(!NOTIFY_OK) return;
+  if(!e.target.checked){ cfg.notify = false; saveCfg(); return; }
+  if(Notification.permission === 'granted'){ cfg.notify = true; saveCfg(); syncNotifyRow(); return; }
+  if(Notification.permission === 'denied'){ e.target.checked = false; syncNotifyRow(); return; }
+  try{
+    const p = await Notification.requestPermission();
+    cfg.notify = p === 'granted';
+  }catch(err){ cfg.notify = false; }
+  e.target.checked = cfg.notify;
+  saveCfg(); syncNotifyRow();
+});
+$('standSwitch').addEventListener('change', e => {
+  cfg.standOn = e.target.checked; saveCfg();
+  showBanner(cfg.standOn ? '久坐提醒已开启：每 ' + cfg.sit + ' 分钟一次' : '久坐提醒已关闭，计时仍会继续但不会提醒', '', 4000);
+  render();
+});
+$('voiceSwitch').addEventListener('change', e => {
+  cfg.voice = e.target.checked; saveCfg(); syncVoiceRow();
+  if(cfg.voice) speak('语音播报已开启');
+});
+document.querySelectorAll('[data-egap]').forEach(b => {
+  b.addEventListener('click', () => {
+    cfg.egap = Number(b.dataset.egap); saveCfg(); markEyeQuick();
+    if(cfg.eyeOn && (mode === 'sitting' || mode === 'resting')) planEye(cfg.egap);
+    render();
+  });
+});
+$('eyeSwitch').addEventListener('change', e => {
+  cfg.eyeOn = e.target.checked; saveCfg();
+  if(cfg.eyeOn){
+    if(mode === 'sitting' || mode === 'resting') planEye(cfg.egap);
+    showBanner('护眼提醒已开启：每 ' + cfg.egap + ' 分钟一次', '', 4000);
+  }else{
+    eyeDueAt = 0;
+    if(activeAlert === 'eye') dismissAlert();
+  }
+  render();
+});
+$('waterSwitch').addEventListener('change', e => {
+  cfg.water = e.target.checked; saveCfg();
+  if(cfg.water){
+    if(water.ml < cfg.wgoal && (mode === 'sitting' || mode === 'resting')) planWater(cfg.wgap);
+    showBanner('喝水提醒已开启：每 ' + cfg.wgap + ' 分钟一次', '', 4000);
+  }else{
+    waterDueAt = 0;
+    if(activeAlert === 'water') dismissAlert();
+  }
+  render();
+});
+document.querySelectorAll('[data-wgap]').forEach(b => {
+  b.addEventListener('click', () => {
+    cfg.wgap = Number(b.dataset.wgap); saveCfg(); markWaterChips();
+    if(cfg.water && water.ml < cfg.wgoal && (mode === 'sitting' || mode === 'resting')) planWater(cfg.wgap);
+    render();
+  });
+});
+document.querySelectorAll('[data-wgoal]').forEach(b => {
+  b.addEventListener('click', () => {
+    cfg.wgoal = Number(b.dataset.wgoal); saveCfg(); markWaterChips();
+    if(cfg.water && water.ml < cfg.wgoal && (mode === 'sitting' || mode === 'resting')) planWater(cfg.wgap);
+    else if(water.ml >= cfg.wgoal) waterDueAt = 0;
+    render();
+  });
+});
+document.querySelectorAll('.water-add').forEach(b => b.addEventListener('click', () => logWater(Number(b.dataset.add))));
+$('waterUndo').addEventListener('click', undoWater);
+$('clearWater').addEventListener('click', () => armConfirm($('clearWater'), clearWaterData));
+$('clearStats').addEventListener('click', () => armConfirm($('clearStats'), clearStatsData));
+$('clearAll').addEventListener('click', () => armConfirm($('clearAll'), clearAllData));
+$('testBtn').addEventListener('click', () => {
+  ensureAudio();
+  if(activeAlert) dismissAlert();
+  raiseAlert('stand', {preview: true});
+});
+
+/* 页面隐藏时不中断提醒：声音继续循环，回来立即补判定 */
+document.addEventListener('visibilitychange', () => {
+  if(document.hidden){ saveStats(); savePhase(); return; }
+  tick();
+  if(mode === 'sitting' || mode === 'resting') acquireWakeLock();
+});
+window.addEventListener('focus', tick);
+window.addEventListener('beforeunload', () => { saveStats(); savePhase(); });
+/* iOS Safari 不触发 beforeunload，用 pagehide 兜底保存进度 */
+window.addEventListener('pagehide', () => { saveStats(); savePhase(); });
+
+/* ---------------- 初始化 ---------------- */
+function init(){
+  $('tipGrid').innerHTML = TIPS.map((t, i) =>
+    '<div class="tip"><span class="n">' + (i < 9 ? '0' : '') + (i+1) + '</span><b>' + t.t + '</b><p>' + t.d + '</p></div>'
+  ).join('');
+  loadCfg(); loadStats(); loadWater(); restorePhase();
+  $('sitInput').value = cfg.sit;
+  $('restInput').value = cfg.rest;
+  $('eyeInput').value = cfg.egap;
+  $('soundSwitch').checked = cfg.sound;
+  $('notifySwitch').checked = cfg.notify;
+  $('vibrateSwitch').checked = cfg.vibrate;
+  $('coverSwitch').checked = cfg.cover;
+  $('standSwitch').checked = cfg.standOn;
+  $('waterSwitch').checked = cfg.water;
+  $('eyeSwitch').checked = cfg.eyeOn;
+  markQuick(); markEyeQuick(); markWaterChips(); syncNotifyRow(); syncVibrateRow(); syncPopupRow(); syncVoiceRow(); paintTips(false);
+  if(mode === 'idle') phaseLen = cfg.sit * 60000;
+  if((mode === 'sitting' || mode === 'resting') && cfg.water && water.ml < cfg.wgoal) planWater(cfg.wgap);
+  if((mode === 'sitting' || mode === 'resting') && cfg.eyeOn) planEye(cfg.egap);
+  render();
+  setInterval(tick, 500);
+  /* 业务脚本全部内联在本文件；sw.js 只做通知通道，延后到首屏加载完成后的空闲期注册，
+     既不阻塞渲染，也不与首屏资源抢请求。 */
+  if(SW_OK){
+    const regSw = () => {
+      navigator.serviceWorker.register('./sw.js').then(reg => { swReg = reg; }).catch(()=>{});
+    };
+    if(document.readyState === 'complete') whenIdle(regSw);
+    else window.addEventListener('load', () => whenIdle(regSw), {once: true});
+  }
+}
+init();
+</script>
+</body>
+</html>
