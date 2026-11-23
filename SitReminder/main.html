@@ -207,6 +207,17 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .btn.danger{flex:none;min-width:96px;color:#e0857c;border-color:rgba(224,133,124,.36);background:rgba(224,133,124,.07);white-space:nowrap}
 .btn.danger:hover:not(:disabled){border-color:#e0857c;color:#f0a49c;background:rgba(224,133,124,.15)}
 .btn.danger.arm{color:#ffe2de;border-color:#ff8f85;background:rgba(255,95,74,.22)}
+/* 浏览器首页：网页无权直接改启动设置，给出地址与各浏览器的路径 */
+.startup{margin-top:clamp(12px,1vw,16px)}
+.startup-box{display:flex;align-items:center;justify-content:space-between;gap:clamp(10px,.9vw,16px);flex-wrap:wrap;padding:clamp(10px,.9vw,13px) clamp(12px,1vw,15px);background:var(--panel2);border:1px solid var(--line);border-radius:10px}
+.startup-addr{flex:1;min-width:0}
+.startup-addr span{display:block;font-size:clamp(.6875rem,.58vw,.75rem);color:var(--dim);letter-spacing:.08em}
+.startup-addr code{display:block;margin-top:3px;font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:clamp(.71875rem,.62vw,.78125rem);color:var(--muted);line-height:1.6;word-break:break-all;user-select:all}
+.startup-actions{display:flex;gap:8px;flex-wrap:wrap}
+.startup-hint{margin-top:clamp(8px,.7vw,10px);font-size:clamp(.71875rem,.62vw,.78125rem);color:var(--muted);line-height:1.7}
+.startup .foot-note{margin-top:6px}
+.btn.gold{color:var(--gold);border-color:rgba(228,184,62,.42);background:rgba(228,184,62,.08)}
+.btn.gold:hover:not(:disabled){border-color:var(--gold);color:var(--gold);background:rgba(228,184,62,.16)}
 /* 页脚 */
 .foot{margin-top:clamp(18px,1.5vw,24px);font-size:clamp(.6875rem,.6vw,.75rem);color:#5c5851;line-height:1.9;text-align:center;border-top:1px solid var(--line);padding-top:clamp(16px,1.4vw,22px)}
 .foot p + p{margin-top:2px}
@@ -399,6 +410,22 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
     </div>
   </section>
 
+  <section class="panel startup" aria-label="设为浏览器首页">
+    <h2>设为浏览器首页 <span>启动浏览器就能直接看到工位伴侣</span></h2>
+    <div class="startup-box">
+      <div class="startup-addr">
+        <span>在线地址</span>
+        <code id="homeUrl">https://codershang.github.io/idea-lab/SitReminder/main.html</code>
+      </div>
+      <div class="startup-actions">
+        <button type="button" class="btn gold" id="copyHomeUrl">复制在线地址</button>
+        <button type="button" class="btn" id="copyHomeSettings" hidden>复制设置页地址</button>
+      </div>
+    </div>
+    <p class="startup-hint" id="homeHint">在浏览器设置中找到「启动时」或「主页」，把在线地址设为启动页。</p>
+    <p class="foot-note">浏览器不允许网页直接修改启动页或主页，这是安全限制；按上面的路径手动设置一次即可。这里固定使用 GitHub Pages 的在线地址，本地打开时复制到的也是该地址。</p>
+  </section>
+
   <section class="panel data" aria-label="数据管理">
     <h2>数据 <span>清记录不动设置，全部重置才回到默认</span></h2>
     <div class="data-grid">
@@ -443,6 +470,7 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 <script>
 /* ---------------- 常量与文案 ---------------- */
 const SKEY='sitrem_settings_v1', TKEY='sitrem_stats_v1', PKEY='sitrem_phase_v1', WKEY='sitrem_water_v1';
+const HOME_URL='https://codershang.github.io/idea-lab/SitReminder/main.html';
 const RING_LEN=2*Math.PI*62;
 const DEFAULTS={sit:45,rest:5,sound:true,soundMode:'loop',notify:true,vibrate:true,cover:true,standOn:true,voice:true,water:true,wgap:60,wgoal:1700};
 const TIPS=[
@@ -1040,6 +1068,45 @@ function clearAllData(){
   location.reload();
 }
 
+/* 浏览器首页：网页无权修改浏览器的启动设置，只能复制地址并给出对应路径 */
+function homeSetup(){
+  const ua = navigator.userAgent;
+  if(/Edg\//.test(ua)) return {name:'Edge', url:'edge://settings/startHomeNTP', hint:'打开「设置 → 启动、主页和新建标签页」，在「启动时」选择「打开以下页面」，把上面的地址添加进去。'};
+  if(/OPR\//.test(ua)) return {name:'Opera', url:'opera://settings/onStartup', hint:'打开「设置 → 启动时」，选择「打开特定网页」，把上面的地址添加进去。'};
+  if(/Firefox\//.test(ua)) return {name:'Firefox', url:'about:preferences#home', hint:'打开「设置 → 主页」，在「主页和新窗口」选择「自定义网址」，把上面的地址添加进去。'};
+  if(/Chrome\//.test(ua)) return {name:'Chrome', url:'chrome://settings/onStartup', hint:'打开「设置 → 启动时」，选择「打开特定网页」，把上面的地址添加进去。'};
+  if(/Safari\//.test(ua)) return {name:'Safari', url:'', hint:'打开「设置 → 通用」，在「Safari 打开」与「主页」中填入上面的地址。'};
+  return {name:'浏览器', url:'', hint:'在浏览器设置里找到「启动时」或「主页」，选择打开指定网页，把上面的地址添加进去。'};
+}
+function copyText(text){
+  const fallback = () => {
+    let ta = null;
+    try{
+      ta = document.createElement('textarea');
+      ta.value = text;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;left:-9999px;top:0;opacity:0';
+      document.body.appendChild(ta);
+      ta.select();
+      ta.setSelectionRange(0, ta.value.length);
+      return document.execCommand('copy');
+    }catch(e){ return false; }
+    finally{ if(ta && ta.parentNode) ta.parentNode.removeChild(ta); }
+  };
+  if(navigator.clipboard && window.isSecureContext){
+    return navigator.clipboard.writeText(text).then(() => true).catch(fallback);
+  }
+  return Promise.resolve(fallback());
+}
+function renderHomeSetup(){
+  const setup = homeSetup();
+  $('homeUrl').textContent = HOME_URL;
+  $('homeHint').textContent = '已识别 ' + setup.name + '：' + setup.hint;
+  const btn = $('copyHomeSettings');
+  if(setup.url){ btn.hidden = false; btn.textContent = '复制 ' + setup.name + ' 设置地址'; }
+  else btn.hidden = true;
+}
+
 /* 注意力强化：提醒期间标签标题与图标交替闪烁 */
 function makeFavicon(fill){
   const c = document.createElement('canvas'); c.width = c.height = 64;
@@ -1421,6 +1488,18 @@ $('waterUndo').addEventListener('click', undoWater);
 $('clearSit').addEventListener('click', () => armConfirm($('clearSit'), clearSitData));
 $('clearWater').addEventListener('click', () => armConfirm($('clearWater'), clearWaterData));
 $('clearAll').addEventListener('click', () => armConfirm($('clearAll'), clearAllData));
+$('copyHomeUrl').addEventListener('click', () => {
+  copyText(HOME_URL).then(ok => {
+    showBanner(ok ? '在线地址已复制，粘贴到浏览器启动页设置即可' : '复制失败，请手动选中地址复制', '', 6000);
+  });
+});
+$('copyHomeSettings').addEventListener('click', () => {
+  const setup = homeSetup();
+  if(!setup.url) return;
+  copyText(setup.url).then(ok => {
+    showBanner(ok ? setup.name + ' 设置地址已复制，粘贴到地址栏打开' : '复制失败，请手动输入 ' + setup.url, '', 6000);
+  });
+});
 $('testBtn').addEventListener('click', () => {
   ensureAudio();
   if(activeAlert) dismissAlert();
@@ -1453,6 +1532,7 @@ function init(){
   $('standSwitch').checked = cfg.standOn;
   $('waterSwitch').checked = cfg.water;
   markQuick(); markWaterChips(); syncNotifyRow(); syncVibrateRow(); syncSoundRow(); syncVoiceRow(); paintTips(false);
+  renderHomeSetup();
   if(mode === 'idle') phaseLen = cfg.sit * 60000;
   if((mode === 'sitting' || mode === 'resting') && cfg.water && water.ml < cfg.wgoal) planWater(cfg.wgap);
   render();
