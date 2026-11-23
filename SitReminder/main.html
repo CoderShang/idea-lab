@@ -5,12 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="description" content="面向坐班族的工位健康伴侣：按间隔提醒起身活动与小口补水，带活动倒计时、饮水记录、随机拉伸建议与今日统计，纯静态、零依赖、数据仅保存在本机。">
 <meta name="theme-color" content="#0b0b0d">
-<!-- 图标内联为 data URI，避免浏览器额外请求 /favicon.ico -->
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='9' fill='%230b0b0d'/><g fill='none' stroke='%23e4b83e' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='20' cy='20' r='12.5'/><path d='M20 12.5V20l5 3.5'/></g></svg>">
+<!-- 图标内联为 data URI，避免浏览器额外请求 /favicon.ico。图标里那句 sr2 只是版本标记：
+     换掉它能逼浏览器把这份图标当成一条新记录重新入库，外观完全不变，用于刷新 Windows 通知头部的站点图标 -->
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><!--sr2--><rect width='40' height='40' rx='9' fill='%230b0b0d'/><g fill='none' stroke='%23e4b83e' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'><circle cx='20' cy='20' r='12.5'/><path d='M20 12.5V20l5 3.5'/></g></svg>">
 <title>工位伴侣 · 久坐与喝水</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0b0b0d;--panel:#121216;--panel2:#17171d;--line:#26262e;--line2:#34343e;--text:#ece9e1;--muted:#a29e93;--dim:#6f6c64;--gold:#e4b83e;--green:#55b07c;--red:#c9604f}
+:root{color-scheme:dark;--bg:#0b0b0d;--panel:#121216;--panel2:#17171d;--line:#26262e;--line2:#34343e;--text:#ece9e1;--muted:#a29e93;--dim:#6f6c64;--gold:#e4b83e;--green:#55b07c;--red:#c9604f}
 html{-webkit-text-size-adjust:100%;font-size:clamp(15.5px,.18vw + 13.5px,16.5px)}
 body{background-color:var(--bg);background-image:radial-gradient(1400px 660px at 50% -8%,#191510 0%,rgba(11,11,13,0) 62%);background-repeat:no-repeat;color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;font-size:1rem;line-height:1.55;min-height:100vh;min-height:100dvh}
 button{font:inherit}
@@ -29,6 +30,44 @@ button,a{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 .stat{min-width:clamp(92px,7vw,120px);padding:clamp(8px,.7vw,11px) clamp(12px,.9vw,16px);background:var(--panel);border:1px solid var(--line);border-radius:clamp(10px,.8vw,13px)}
 .stat b{display:block;font-size:clamp(1.25rem,1.2vw,1.5rem);font-weight:600;color:var(--gold);font-variant-numeric:tabular-nums;line-height:1.3;white-space:nowrap}
 .stat span{font-size:clamp(.6875rem,.58vw,.75rem);color:var(--muted);letter-spacing:.08em}
+/* 作者：页脚上方一张卡片，打赏与加好友都收在这里，不去挤页头 */
+.author{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:clamp(14px,1.8vw,28px);margin-top:clamp(12px,1vw,16px);padding:clamp(16px,1.3vw,22px) clamp(16px,1.3vw,24px);background:linear-gradient(150deg,rgba(228,184,62,.08),rgba(18,18,23,.55));border:1px solid rgba(228,184,62,.26);border-radius:clamp(12px,.9vw,14px)}
+.author-head{display:flex;align-items:center;gap:10px;margin-bottom:7px}
+.author-badge{flex:none;width:34px;height:34px;display:grid;place-items:center;border-radius:50%;background:linear-gradient(150deg,#cfaa52,#94701f);color:#11100c;box-shadow:inset 0 1px 0 rgba(255,255,255,.3)}
+.author-badge svg{width:18px;height:18px}
+.author h2{font-size:clamp(.9375rem,.8vw,1.0625rem);font-weight:600;letter-spacing:.08em}
+.author h2 span{display:block;margin-top:2px;font-size:clamp(.6875rem,.58vw,.75rem);font-weight:400;color:var(--dim);letter-spacing:.04em}
+.author p{font-size:clamp(.78125rem,.7vw,.84375rem);color:var(--muted);line-height:1.85}
+.author-acts{display:flex;gap:8px;flex-wrap:wrap}
+.author-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:11px 16px;border:1px solid rgba(228,184,62,.5);border-radius:10px;background:linear-gradient(135deg,#f4d980,#d9a92f 58%,#c9962c);color:#1b1608;font-size:clamp(.8125rem,.7vw,.875rem);font-weight:700;letter-spacing:.04em;cursor:pointer;transition:transform .12s,box-shadow .2s,border-color .15s,color .15s,background .15s}
+.author-btn:hover{transform:translateY(-1px);box-shadow:0 8px 20px rgba(228,184,62,.26)}
+.author-btn:active{transform:scale(.97)}
+.author-btn.line{background:transparent;border-color:var(--line2);color:var(--muted);font-weight:600}
+.author-btn.line:hover{border-color:var(--green);color:var(--green);box-shadow:none;transform:none}
+.author-btn svg{width:1.05em;height:1.05em;flex:none}
+.tipjar{position:fixed;top:0;right:0;bottom:0;left:0;z-index:70;display:flex;align-items:center;justify-content:center;padding:clamp(14px,3vw,36px);background:rgba(5,5,7,.86);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);overscroll-behavior:contain;opacity:0;visibility:hidden;transition:opacity .28s,visibility .28s}
+.tipjar.open{opacity:1;visibility:visible}
+body.tipjar-open{overflow:hidden}
+.tipjar-card{position:relative;width:min(400px,100%);max-height:92vh;max-height:88dvh;overflow:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;background:linear-gradient(170deg,#1a1710,#101013);border:1px solid rgba(228,184,62,.42);border-radius:clamp(15px,1.4vw,18px);padding:clamp(20px,2.2vw,28px) clamp(18px,2vw,26px);text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.72);transform:translateY(14px) scale(.98);transition:transform .32s cubic-bezier(.2,1.2,.3,1)}
+.tipjar.open .tipjar-card{transform:none}
+.tipjar-card::-webkit-scrollbar{width:0;height:0}
+.tipjar-close{position:absolute;top:10px;right:10px;width:32px;height:32px;display:grid;place-items:center;background:none;border:1px solid var(--line2);border-radius:50%;color:var(--dim);cursor:pointer;transition:border-color .15s,color .15s}
+.tipjar-close:hover{border-color:var(--gold);color:var(--gold)}
+.tipjar-close svg{width:13px;height:13px}
+.tipjar-eyebrow{font-size:clamp(.6875rem,.6vw,.75rem);color:var(--gold);letter-spacing:.34em;text-indent:.34em}
+.tipjar-card h2{font-size:clamp(1.1875rem,1.6vw,1.375rem);font-weight:600;letter-spacing:.16em;text-indent:.16em;margin:8px 0 clamp(10px,1vw,13px)}
+.tipjar-text{font-size:clamp(.8125rem,.72vw,.875rem);color:var(--muted);line-height:1.95;text-align:justify;text-align-last:center;margin-bottom:clamp(14px,1.4vw,18px)}
+.tipjar-qr{width:min(228px,62vw);margin:0 auto clamp(10px,.9vw,14px);padding:8px;background:#f4f1e8;border-radius:12px;box-shadow:0 10px 26px rgba(0,0,0,.42)}
+.tipjar-qr img{display:block;width:100%;height:auto;border-radius:6px}
+.tipjar-qr.fail{display:grid;place-items:center;min-height:150px;background:var(--panel2);border:1px dashed var(--line2);box-shadow:none}
+.tipjar-qr.fail img{display:none}
+.tipjar-qr.fail::after{content:'二维码没能加载出来，检查网络后重新打开';font-size:clamp(.71875rem,.62vw,.78125rem);color:var(--dim);line-height:1.8;padding:0 12px}
+.tipjar-note{font-size:clamp(.6875rem,.6vw,.75rem);color:var(--dim);letter-spacing:.08em;line-height:1.8}
+.tipjar-card .btn{width:100%;margin-top:clamp(12px,1.2vw,15px)}
+@media (max-width:820px){
+  .author{grid-template-columns:1fr;align-items:stretch}
+  .author-btn{flex:1;min-height:46px}
+}
 /* 主区 */
 .hero{display:grid;grid-template-columns:minmax(300px,400px) minmax(0,1fr);gap:clamp(12px,1vw,16px);margin:clamp(16px,1.4vw,22px) 0 0}
 .timer-card{position:relative;display:flex;flex-direction:column;align-items:center;gap:clamp(10px,.9vw,14px);background:linear-gradient(160deg,#17150f,#101013);border:1px solid var(--line);border-radius:clamp(14px,1vw,16px);padding:clamp(18px,1.6vw,26px) clamp(16px,1.3vw,22px);--ringc:var(--gold);transition:border-color .4s,background .4s}
@@ -245,6 +284,8 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   .controls{grid-template-columns:1fr}
   .controls .main-btn{grid-column:auto}
 }
+/* 系统开启「减少动态效果」时关掉过渡与循环动画，倒计时数字仍照常更新 */
+@media (prefers-reduced-motion: reduce){*{transition:none!important;animation:none!important}}
 </style>
 </head>
 <body>
@@ -427,7 +468,7 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
   </section>
 
   <section class="panel data" aria-label="数据管理">
-    <h2>数据 <span>清记录不动设置，全部重置才回到默认</span></h2>
+    <h2>数据 <span>单项只清本类记录，全部清除才回到默认</span></h2>
     <div class="data-grid">
       <div class="set-row">
         <div class="set-label"><b>今日久坐</b><i id="dataSitNote">起身 0 次 · 久坐 0 分 · 活动 0 分</i></div>
@@ -438,11 +479,27 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
         <button type="button" class="btn danger" id="clearWater">清空</button>
       </div>
       <div class="set-row">
-        <div class="set-label"><b>全部本地数据</b><i>饮水、统计与所有提醒设置一起恢复默认</i></div>
-        <button type="button" class="btn danger" id="clearAll">重置</button>
+        <div class="set-label"><b>全部本地数据</b><i>久坐、饮水、提醒设置与页面缓存一并清除，回到第一次打开的样子</i></div>
+        <button type="button" class="btn danger" id="clearAll">全部清除</button>
       </div>
     </div>
-    <p class="foot-note">误点了补水按钮：先在补水卡里连点「撤销上一杯」，可以一路撤回今天任意一次记录；确实记乱了，再用这里直接清空。为防止误清，点一次是准备，再点一次才真正执行。</p>
+    <p class="foot-note">「清空」只动对应那一类记录，提醒与计时照常；「全部清除」则连提醒设置、计时进度和本页缓存一起抹掉，页面随后自动刷新，等同第一次打开。误点了补水按钮，可先在补水卡里连点「撤销上一杯」，一路撤回今天任意一次记录。为防止误清，三个按钮都是点一次上膛、再点一次才真正执行。</p>
+  </section>
+
+  <section class="author" aria-label="关于作者">
+    <div class="author-main">
+      <div class="author-head">
+        <span class="author-badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13v7a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4z"/><path d="M17 9h2.2a2.3 2.3 0 0 1 0 4.6H17"/><path d="M6 4.5c.6 .8 .6 1.7 0 2.5M10 4.5c.6 .8 .6 1.7 0 2.5"/></svg>
+        </span>
+        <h2>关于作者<span>工具说明与联系方式</span></h2>
+      </div>
+      <p>本页为个人开发的本地工具，不收费、无广告，数据仅保存在本机浏览器。使用中遇到问题或有改进建议，可通过微信联系。</p>
+    </div>
+    <div class="author-acts">
+      <button type="button" class="author-btn" data-jar="tipJar">打赏作者</button>
+      <button type="button" class="author-btn line" data-jar="wechatJar">联系作者</button>
+    </div>
   </section>
 
   <footer class="foot">
@@ -465,6 +522,33 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
       <button type="button" class="btn" id="coverSnooze">5 分钟后提醒我</button>
     </div>
     <p class="cover-note" id="coverNote"></p>
+  </div>
+</div>
+<!-- 打赏与加好友：共用一套弹层样式，页脚卡片上的按钮按 data-jar 打开对应那一层 -->
+<div class="tipjar" id="tipJar" role="dialog" aria-modal="true" aria-labelledby="tipJarTitle" aria-hidden="true">
+  <div class="tipjar-card">
+    <button type="button" class="tipjar-close" aria-label="关闭打赏窗口">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.6 5.6l8.8 8.8M14.4 5.6l-8.8 8.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+    <p class="tipjar-eyebrow">微信收款码</p>
+    <h2 id="tipJarTitle">请我喝杯奶茶</h2>
+    <p class="tipjar-text">扫码可向作者转账，金额随意。打赏不影响任何功能的使用。</p>
+    <div class="tipjar-qr" id="tipJarQr"><img src="https://testbucket5037.oss-cn-beijing.aliyuncs.com/img/IMG_0836.JPG" alt="微信收款二维码" decoding="async" referrerpolicy="no-referrer"></div>
+    <p class="tipjar-note">微信扫一扫 · 金额随意</p>
+    <button type="button" class="btn tipjar-done">关闭</button>
+  </div>
+</div>
+<div class="tipjar" id="wechatJar" role="dialog" aria-modal="true" aria-labelledby="wechatJarTitle" aria-hidden="true">
+  <div class="tipjar-card">
+    <button type="button" class="tipjar-close" aria-label="关闭加好友窗口">
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M5.6 5.6l8.8 8.8M14.4 5.6l-8.8 8.8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+    </button>
+    <p class="tipjar-eyebrow">作者微信</p>
+    <h2 id="wechatJarTitle">加个微信</h2>
+    <p class="tipjar-text">有问题或改进建议可通过微信联系，备注「工位伴侣」便于识别。</p>
+    <div class="tipjar-qr" id="wechatJarQr"><img src="https://testbucket5037.oss-cn-beijing.aliyuncs.com/img/IMG_0839.JPG" alt="作者微信二维码" decoding="async" referrerpolicy="no-referrer"></div>
+    <p class="tipjar-note">微信扫一扫 · 备注「工位伴侣」</p>
+    <button type="button" class="btn tipjar-done">关闭</button>
   </div>
 </div>
 <script>
@@ -574,6 +658,20 @@ const NOTIFY_OK = 'Notification' in window && !IS_FILE && !IS_IOS;
 const VIBRATE_OK = 'vibrate' in navigator && !IS_IOS;
 const SW_OK = 'serviceWorker' in navigator && !IS_FILE;
 
+/* ---------------- OSS 图片缓存 ---------------- */
+/* 二维码托管在阿里云 OSS，按请求计费。sw.js 缓存优先，命中就不出网；
+   这里只负责在图片加载失败时把坏响应摘掉，免得坏图被永久缓存住。 */
+const OSS_CACHE = 'oss-img-sr-v1';   // 与 sw.js 保持一致
+function dropImgCache(url){
+  if(!url || !('caches' in window)) return;
+  try{ caches.open(OSS_CACHE).then(c => c.delete(url)).catch(()=>{}); }catch(e){}
+}
+/* 图片解码失败（图被删了或还没传上去）就清掉缓存，下次重新取 */
+window.addEventListener('error', e => {
+  const t = e.target;
+  if(t && t.tagName === 'IMG') dropImgCache(t.currentSrc || t.src);
+}, true);
+
 /* ---------------- 工具 ---------------- */
 const $ = id => document.getElementById(id);
 const pad = n => String(n).padStart(2,'0');
@@ -614,6 +712,10 @@ let lastAlertEndAt = 0, alertMerged = [];
 let micAction = null, micUntil = 0, micNotified = false;
 
 /* ---------------- 存储 ---------------- */
+/* 全清开关：置位后所有落盘一律跳过。
+   否则 location.reload() 会先触发 beforeunload / pagehide，
+   把内存里的旧统计又写回 localStorage，刷新后数据“复活”。 */
+let wiping = false;
 function loadCfg(){
   try{
     const d = JSON.parse(localStorage.getItem(SKEY) || 'null');
@@ -633,7 +735,7 @@ function loadCfg(){
     }
   }catch(e){}
 }
-function saveCfg(){ try{ localStorage.setItem(SKEY, JSON.stringify(cfg)); }catch(e){} }
+function saveCfg(){ if(wiping) return; try{ localStorage.setItem(SKEY, JSON.stringify(cfg)); }catch(e){} }
 function loadStats(){
   try{
     const d = JSON.parse(localStorage.getItem(TKEY) || 'null');
@@ -642,7 +744,7 @@ function loadStats(){
     }
   }catch(e){}
 }
-function saveStats(){ try{ localStorage.setItem(TKEY, JSON.stringify(stats)); }catch(e){} }
+function saveStats(){ if(wiping) return; try{ localStorage.setItem(TKEY, JSON.stringify(stats)); }catch(e){} }
 function loadWater(){
   try{
     const d = JSON.parse(localStorage.getItem(WKEY) || 'null');
@@ -651,13 +753,14 @@ function loadWater(){
     }
   }catch(e){}
 }
-function saveWater(){ try{ localStorage.setItem(WKEY, JSON.stringify(water)); }catch(e){} }
+function saveWater(){ if(wiping) return; try{ localStorage.setItem(WKEY, JSON.stringify(water)); }catch(e){} }
 function resetWaterDay(){
   water = {date:todayKey(), ml:0, cups:0, lastAt:0};
   waterHist.length = 0; waterDueAt = 0; waterRetry = 0; waterHotUntil = 0;
   saveWater();
 }
 function savePhase(){
+  if(wiping) return;
   try{
     if(mode === 'idle'){ sessionStorage.removeItem(PKEY); return; }
     sessionStorage.setItem(PKEY, JSON.stringify({mode, pausedFrom, endAt, phaseLen, pausedRemain, savedAt:Date.now()}));
@@ -1100,10 +1203,34 @@ function clearSitData(){
   render();
 }
 function clearAllData(){
-  try{ localStorage.removeItem(SKEY); localStorage.removeItem(TKEY); localStorage.removeItem(WKEY); }catch(e){}
-  try{ sessionStorage.removeItem(PKEY); }catch(e){}
+  /* 先把“不再写回”的旗立起来，再动存储，最后才刷新 */
+  wiping = true;
   stopAlertChannels(); releaseWakeLock();
-  location.reload();
+  /* 只需清本页自己写的键（sitrem_ 前缀），顺带带走旧版本遗留的同前缀键 */
+  try{
+    const keys = [];
+    for(let i = 0; i < localStorage.length; i++){
+      const k = localStorage.key(i);
+      if(k && k.indexOf('sitrem_') === 0) keys.push(k);
+    }
+    keys.forEach(k => { try{ localStorage.removeItem(k); }catch(e){} });
+  }catch(e){}
+  try{ sessionStorage.clear(); }catch(e){}
+  const go = () => { try{ location.reload(); }catch(e){} };
+  /* CacheStorage 里是本页的 OSS 图片缓存（两张二维码）：一并清掉，下次打开重新取图。
+     只清自己的前缀，不碰囚徒健身那边的图例缓存；能清就清，清不掉也不拦刷新（400 ms 后照走） */
+  if('caches' in window){
+    let settled = false;
+    const once = () => { if(settled) return; settled = true; go(); };
+    setTimeout(once, 400);
+    try{
+      caches.keys()
+        .then(list => Promise.all(list.filter(k => k.indexOf('oss-img-sr-') === 0).map(k => caches.delete(k))))
+        .then(once, once);
+    }catch(e){ once(); }
+  }else{
+    go();
+  }
 }
 
 /* 浏览器首页：网页无权修改浏览器的启动设置，只能复制地址并给出对应路径 */
@@ -1301,6 +1428,7 @@ function render(){
 
 /* ---------------- 计时循环 ---------------- */
 function tick(){
+  if(wiping) return;   // 全清到刷新之间不再计时、不再弹提醒
   const now = Date.now();
   if(stats.date !== todayKey()){ stats = {date:todayKey(), stands:0, sitSec:0, restSec:0}; saveStats(); }
   if(water.date !== todayKey()){
@@ -1435,7 +1563,10 @@ $('coverOk').addEventListener('click', () => {
 });
 $('coverSnooze').addEventListener('click', () => { if(activeAlert) resolveAlert(activeAlert, 'later'); else hideCover(); });
 document.addEventListener('keydown', e => {
-  if(e.key !== 'Escape' || !coverOpen) return;
+  if(e.key !== 'Escape') return;
+  const jar = document.querySelector('.tipjar.open');
+  if(jar){ closeJar(jar); return; }
+  if(!coverOpen) return;
   if(activeAlert) resolveAlert(activeAlert, 'later'); else hideCover();
 });
 
@@ -1544,6 +1675,39 @@ $('testBtn').addEventListener('click', () => {
   raiseAlert('stand', {preview: true});
 });
 
+/* ---------------- 作者：打赏与加好友 ---------------- */
+let jarOpener = null;
+function openJar(id){
+  const box = $(id);
+  if(!box) return;
+  jarOpener = document.activeElement;
+  box.classList.add('open');
+  box.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('tipjar-open');
+  const close = box.querySelector('.tipjar-close');
+  if(close){ try{ close.focus({preventScroll: true}); }catch(e){} }
+}
+function closeJar(box){
+  if(!box || !box.classList.contains('open')) return;
+  box.classList.remove('open');
+  box.setAttribute('aria-hidden', 'true');
+  if(!document.querySelector('.tipjar.open')) document.body.classList.remove('tipjar-open');
+  if(jarOpener && jarOpener.focus){ try{ jarOpener.focus({preventScroll: true}); }catch(e){} }
+  jarOpener = null;
+}
+document.querySelectorAll('[data-jar]').forEach(btn => {
+  btn.addEventListener('click', () => openJar(btn.dataset.jar));
+});
+document.querySelectorAll('.tipjar').forEach(box => {
+  /* 点遮罩空白处也关，但点卡片内部不关 */
+  box.addEventListener('click', e => { if(e.target === box) closeJar(box); });
+  box.querySelectorAll('.tipjar-close, .tipjar-done').forEach(b => b.addEventListener('click', () => closeJar(box)));
+  /* 二维码是外链图，加载失败时给一句白话兜底，不留空框 */
+  const img = box.querySelector('.tipjar-qr img');
+  const qr = box.querySelector('.tipjar-qr');
+  if(img && qr) img.addEventListener('error', () => qr.classList.add('fail'));
+});
+
 /* 页面隐藏时不中断提醒：声音继续循环，回来立即补判定 */
 document.addEventListener('visibilitychange', () => {
   if(document.hidden){ saveStats(); savePhase(); return; }
@@ -1575,7 +1739,15 @@ function init(){
   if((mode === 'sitting' || mode === 'resting') && cfg.water && water.ml < cfg.wgoal) planWater(cfg.wgap);
   render();
   setInterval(tick, 500);
-  /* 业务脚本全部内联在本文件；sw.js 只做通知通道，延后到首屏加载完成后的空闲期注册，
+  /* 脚本跑起来之前就可能失败的图（弹窗里那两张二维码），补一次清理与兜底 */
+  document.querySelectorAll('img[src^="https://testbucket5037"]').forEach(img => {
+    if(img.complete && img.naturalWidth === 0){
+      dropImgCache(img.currentSrc || img.src);
+      const qr = img.closest('.tipjar-qr');
+      if(qr) qr.classList.add('fail');
+    }
+  });
+  /* 业务脚本全部内联在本文件；sw.js 负责通知通道与图片缓存，延后到首屏加载完成后的空闲期注册，
      既不阻塞渲染，也不与首屏资源抢请求。 */
   if(SW_OK){
     const regSw = () => {
