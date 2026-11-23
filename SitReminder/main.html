@@ -471,6 +471,9 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 /* ---------------- 常量与文案 ---------------- */
 const SKEY='sitrem_settings_v1', TKEY='sitrem_stats_v1', PKEY='sitrem_phase_v1', WKEY='sitrem_water_v1';
 const HOME_URL='https://codershang.github.io/idea-lab/SitReminder/main.html';
+/* 通知图标显式指定，避免浏览器在同源站点间回退到其它项目的图标 */
+const ICON_URL = new URL('icon-192.png', location.href).href;
+const BADGE_URL = new URL('badge-96.png', location.href).href;
 const RING_LEN=2*Math.PI*62;
 const DEFAULTS={sit:45,rest:5,sound:true,soundMode:'loop',notify:true,vibrate:true,cover:true,standOn:true,voice:true,water:true,wgap:60,wgoal:1700};
 const TIPS=[
@@ -668,7 +671,7 @@ function chime(kind){
 }
 function notify(title, body){
   if(!cfg.notify || !NOTIFY_OK || Notification.permission !== 'granted') return;
-  const opts = {body, tag:'sitrem', renotify:true, requireInteraction:true, vibrate:[700,500,700,500,700]};
+  const opts = {body, icon:ICON_URL, badge:BADGE_URL, tag:'sitrem', renotify:true, requireInteraction:true, vibrate:[700,500,700,500,700]};
   const fallback = () => {
     try{
       const n = new Notification(title, opts);
