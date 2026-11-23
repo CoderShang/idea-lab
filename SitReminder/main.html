@@ -471,9 +471,42 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 /* ---------------- 常量与文案 ---------------- */
 const SKEY='sitrem_settings_v1', TKEY='sitrem_stats_v1', PKEY='sitrem_phase_v1', WKEY='sitrem_water_v1';
 const HOME_URL='https://codershang.github.io/idea-lab/SitReminder/main.html';
-/* 通知图标显式指定，避免浏览器在同源站点间回退到其它项目的图标 */
-const ICON_URL = new URL('icon-192.png', location.href).href;
-const BADGE_URL = new URL('badge-96.png', location.href).href;
+/* 通知图标：运行时用 canvas 画好再转成 data URI，不落地额外图片文件。
+   大图标与页面 favicon 同一造型（金色时钟），徽标用透明底白色剪影供 Android 状态栏使用。 */
+function notifyIcon(size, mono){
+  try{
+    const c = document.createElement('canvas');
+    c.width = c.height = size;
+    const g = c.getContext('2d');
+    const s = size / 40, r = 9 * s;
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    if(!mono){
+      g.beginPath();
+      g.moveTo(r, 0);
+      g.arcTo(size, 0, size, size, r);
+      g.arcTo(size, size, 0, size, r);
+      g.arcTo(0, size, 0, 0, r);
+      g.arcTo(0, 0, size, 0, r);
+      g.closePath();
+      g.fillStyle = '#0b0b0d';
+      g.fill();
+    }
+    g.strokeStyle = mono ? '#ffffff' : '#e4b83e';
+    g.lineWidth = 2.4 * s;
+    g.beginPath();
+    g.arc(20 * s, 20 * s, 12.5 * s, 0, Math.PI * 2);
+    g.stroke();
+    g.beginPath();
+    g.moveTo(20 * s, 12.5 * s);
+    g.lineTo(20 * s, 20 * s);
+    g.lineTo(25 * s, 23.5 * s);
+    g.stroke();
+    return c.toDataURL('image/png');
+  }catch(e){ return ''; }
+}
+const NOTIFY_ICON = notifyIcon(192, false);
+const NOTIFY_BADGE = notifyIcon(96, true);
 const RING_LEN=2*Math.PI*62;
 const DEFAULTS={sit:45,rest:5,sound:true,soundMode:'loop',notify:true,vibrate:true,cover:true,standOn:true,voice:true,water:true,wgap:60,wgoal:1700};
 const TIPS=[
@@ -671,7 +704,9 @@ function chime(kind){
 }
 function notify(title, body){
   if(!cfg.notify || !NOTIFY_OK || Notification.permission !== 'granted') return;
-  const opts = {body, icon:ICON_URL, badge:BADGE_URL, tag:'sitrem', renotify:true, requireInteraction:true, vibrate:[700,500,700,500,700]};
+  const opts = {body, tag:'sitrem', renotify:true, requireInteraction:true, vibrate:[700,500,700,500,700]};
+  if(NOTIFY_ICON) opts.icon = NOTIFY_ICON;
+  if(NOTIFY_BADGE) opts.badge = NOTIFY_BADGE;
   const fallback = () => {
     try{
       const n = new Notification(title, opts);
