@@ -612,15 +612,15 @@ const ALERTS={
     title:'该起身活动了',
     big:()=>fmtClock(remaining()),
     bigLabel:'活动倒计时',
-    sub:()=>'已连续坐了 <b>'+cfg.sit+'</b> 分钟，站起来动一动，给身体一分钟。',
+    sub:()=>'已连续坐了 <b>'+fmtDur(cfg.sit,'分钟')+'</b>，站起来动一动，给身体一分钟。',
     tips:()=>alertTips.map(t=>'<p><b>'+t.t+'</b> · '+t.d+'</p>').join(''),
     note:'网页只能拦住这个标签页；起身后顺手接杯温水，回来在补水卡里记一笔。',
     ok:'我已起身，开始活动',
     later:'5 分钟后提醒我',
     say:'该起身活动了，站起来活动一下',
     notifyTitle:'该起身活动了',
-    notifyBody:()=>'已连续坐了 '+cfg.sit+' 分钟，起来活动 '+cfg.rest+' 分钟'+(cfg.water?'，顺手喝 200 ml 水':'')+'。',
-    banner:()=>'该起身活动了：已连续坐了 ' + cfg.sit + ' 分钟，起来动一动' + (cfg.water ? '，顺手接杯水' : ''),
+    notifyBody:()=>'已连续坐了 '+fmtDur(cfg.sit,'分钟')+'，起来活动 '+cfg.rest+' 分钟'+(cfg.water?'，顺手喝 200 ml 水':'')+'。',
+    banner:()=>'该起身活动了：已连续坐了 ' + fmtDur(cfg.sit,'分钟') + '，起来动一动' + (cfg.water ? '，顺手接杯水' : ''),
     water:false
   },
   water:{
@@ -688,6 +688,14 @@ function fmtClock(ms){
   const s = Math.max(0, Math.ceil(ms/1000));
   const h = Math.floor(s/3600), m = Math.floor(s%3600/60), r = s%60;
   return h ? h + ':' + pad(m) + ':' + pad(r) : pad(m) + ':' + pad(r);
+}
+/* 分钟数转易读时长：满 60 分进位成小时，如 60 → 1 小时、90 → 1 小时 30 分、45 → 45 分 */
+function fmtDur(min, unit){
+  const m = Math.max(0, Math.round(min));
+  const u = unit || '分';
+  if(m < 60) return m + ' ' + u;
+  const h = Math.floor(m/60), r = m % 60;
+  return h + ' 小时' + (r ? ' ' + r + ' ' + u : '');
 }
 
 /* ---------------- 状态 ---------------- */
@@ -1187,7 +1195,7 @@ function armConfirm(btn, run){
 }
 function renderDataNotes(){
   setText($('dataWaterNote'), water.ml + ' ml · ' + water.cups + ' 杯');
-  setText($('dataSitNote'), '起身 ' + stats.stands + ' 次 · 久坐 ' + Math.round(stats.sitSec/60) + ' 分 · 活动 ' + Math.round(stats.restSec/60) + ' 分');
+  setText($('dataSitNote'), '起身 ' + stats.stands + ' 次 · 久坐 ' + fmtDur(stats.sitSec/60) + ' · 活动 ' + fmtDur(stats.restSec/60));
 }
 function clearWaterData(){
   resetWaterDay();
@@ -1403,8 +1411,8 @@ function render(){
   const note = $('sessionNote');
   let html;
   if(mode === 'idle') html = cfg.standOn
-    ? '点击开始，专注时把计时交给页面。每 <b>' + cfg.sit + ' 分钟</b>提醒起身活动 <b>' + cfg.rest + ' 分钟</b>' + (cfg.water ? '，每 <b>' + cfg.wgap + ' 分钟</b>提醒喝水' : '') + '。'
-    : '久坐提醒已关闭，计时会按 <b>' + cfg.sit + ' 分钟</b>滚动但不弹提醒' + (cfg.water ? '；喝水提醒仍生效' : '') + '。';
+    ? '点击开始，专注时把计时交给页面。每 <b>' + fmtDur(cfg.sit,'分钟') + '</b>提醒起身活动 <b>' + cfg.rest + ' 分钟</b>' + (cfg.water ? '，每 <b>' + cfg.wgap + ' 分钟</b>提醒喝水' : '') + '。'
+    : '久坐提醒已关闭，计时会按 <b>' + fmtDur(cfg.sit,'分钟') + '</b>滚动但不弹提醒' + (cfg.water ? '；喝水提醒仍生效' : '') + '。';
   else if(mode === 'sitting') html = (cfg.standOn ? '坐满后提醒起身' : '久坐提醒已关闭，仅计时') + (cfg.water ? '；到点提醒小口补水' : '') + (cfg.standOn ? '，记得真的站起来。' : '。');
   else if(mode === 'resting') html = '离开椅子活动一下，本段活动结束后自动开始下一轮。';
   else html = '计时已暂停，点「继续计时」回到刚才的进度。';
@@ -1417,8 +1425,8 @@ function render(){
   else if(mode === 'resting'){ setText(main,'提前结束休息'); setText(skip,'暂停休息'); skip.disabled = false; reset.disabled = false; }
   else { setText(main,'继续计时'); setText(skip,'跳过本轮'); skip.disabled = true; reset.disabled = false; }
   setText($('stStands'), String(stats.stands));
-  setText($('stSit'), Math.round(stats.sitSec/60) + ' 分');
-  setText($('stRest'), Math.round(stats.restSec/60) + ' 分');
+  setText($('stSit'), fmtDur(stats.sitSec/60));
+  setText($('stRest'), fmtDur(stats.restSec/60));
   setText($('stWater'), water.ml + ' ml');
   if(coverOpen && activeAlert === 'stand') $('coverTime').textContent = fmtClock(remain);
   renderWater();
@@ -1619,7 +1627,7 @@ $('notifySwitch').addEventListener('change', async e => {
 });
 $('standSwitch').addEventListener('change', e => {
   cfg.standOn = e.target.checked; saveCfg();
-  showBanner(cfg.standOn ? '久坐提醒已开启：每 ' + cfg.sit + ' 分钟一次' : '久坐提醒已关闭，计时仍会继续但不会提醒', '', 4000);
+  showBanner(cfg.standOn ? '久坐提醒已开启：每 ' + fmtDur(cfg.sit,'分钟') + '一次' : '久坐提醒已关闭，计时仍会继续但不会提醒', '', 4000);
   render();
 });
 $('voiceSwitch').addEventListener('change', e => {
