@@ -265,6 +265,14 @@ body.locked{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 .foot p + p{margin-top:2px}
 /* iOS 输入框字号不小于 16px，避免聚焦时页面被缩放 */
 @supports (-webkit-touch-callout:none){ .stepper input{font-size:16px} }
+/* 6 项统计要在页头与品牌同排：桌面端收紧卡片尺寸与字号，避免被 1120px 容器挤到第二行；
+   1000px 以下空间不足，改由下面的整行网格接管 */
+@media (min-width:1001px){
+  .stats{gap:5px}
+  .stat{min-width:82px;padding:8px 9px}
+  .stat b{font-size:clamp(1.0625rem,1.1vw,1.1875rem)}
+  .stat span{white-space:nowrap}
+}
 /* 6 项统计与品牌并列会放不下，窄屏先让统计整行铺开，820px 以下再收成两列 */
 @media (max-width:1000px){
   .stats{width:100%;display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
